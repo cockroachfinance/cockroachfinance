@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cockroach Finance — Stable Money. No Politics. Just the Swarm.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #111118;
+            --bg-card: #16161f;
+            --text-primary: #f5f5f7;
+            --text-secondary: #8b8b9a;
+            --accent-gold: #d4af37;
+            --accent-gold-light: #e8c547;
+            --border: #2a2a35;
+            --skeleton: #1e1e28;
+            --skeleton-shine: #2a2a38;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 48px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+            color: var(--accent-gold);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .modal-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .modal-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            background: var(--accent-gold-light);
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--bg-primary);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .submit-btn.loading .spinner {
+            display: block;
+        }
+
+        .submit-btn.loading .btn-text {
+            display: none;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 40px 20px;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .success-message h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+        }
+
+        .success-message p {
+            color: var(--text-secondary);
+        }
+
+        .form-container.hidden {
+            display: none;
+        }
+
+        /* ===== SKELETON LOADER ===== */
+        .skeleton-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        .skeleton-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .skeleton-logo {
+            width: 200px;
+            height: 40px;
+            background: var(--skeleton);
+            border-radius: 4px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-line {
+            width: 300px;
+            height: 16px;
+            background: var(--skeleton);
+            border-radius: 4px;
+            margin: 12px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-line.short {
+            width: 200px;
+        }
+
+        .skeleton-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            100% { left: 100%; }
+        }
+
+        .skeleton-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--skeleton);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 40px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== NAVIGATION ===== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            transition: transform 0.3s ease;
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent-gold);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* ===== SCROLL REVEAL ANIMATIONS ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-left.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(60px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-right.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-scale.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .stagger-1 { transition-delay: 0.1s; }
+        .stagger-2 { transition-delay: 0.2s; }
+        .stagger-3 { transition-delay: 0.3s; }
+        .stagger-4 { transition-delay: 0.4s; }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+                var(--bg-primary);
+            z-index: -2;
+        }
+
+        .hero-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 900px;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            padding: 8px 20px;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+            border-radius: 100px;
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 600;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            color: var(--accent-gold);
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 48px;
+            line-height: 1.8;
+        }
+
+        .hero-phases {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-bottom: 48px;
+            flex-wrap: wrap;
+        }
+
+        .phase {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .phase-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        /* ===== TRUST BAR ===== */
+        .trust-bar {
+            background: var(--bg-secondary);
+            padding: 24px 48px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .trust-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .trust-icon {
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+        }
+
+        /* ===== SECTIONS ===== */
+        section {
+            padding: 120px 48px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-tag {
+            color: var(--accent-gold);
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .section-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ===== HOW IT WORKS ===== */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+        }
+
+        .step-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            position: relative;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .step-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-gold);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -16px;
+            left: 40px;
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .step-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            margin-top: 16px;
+        }
+
+        .step-quote {
+            color: var(--accent-gold);
+            font-style: italic;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .checklist {
+            list-style: none;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .checklist li::before {
+            content: '☑';
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+
+        /* ===== TRANSPARENCY SECTION ===== */
+        .transparency-hero {
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            padding: 80px;
+            text-align: center;
+            margin-bottom: 60px;
+            border: 1px solid var(--border);
+        }
+
+        .ledger-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 32px;
+            padding: 20px 40px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .ledger-btn:hover {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+        }
+
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .rule-card {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .rule-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            opacity: 0.3;
+            line-height: 1;
+        }
+
+        .rule-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            margin: 16px 0 12px;
+        }
+
+        .rule-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .motive-box {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+            border-left: 4px solid var(--accent-gold);
+            padding: 40px;
+            border-radius: 0 16px 16px 0;
+        }
+
+        .motive-box p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-style: italic;
+            color: var(--text-primary);
+        }
+
+        /* ===== FAQ SECTION ===== */
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .faq-item:hover {
+            border-color: var(--accent-gold);
+        }
+
+        .faq-question {
+            padding: 24px 32px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .faq-question:hover {
+            color: var(--accent-gold);
+        }
+
+        .faq-icon {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+            padding: 0 32px 24px;
+        }
+
+        .faq-answer p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 80px 48px 40px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 60px;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .footer-brand {
+            max-width: 300px;
+        }
+
+        .footer-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            color: var(--accent-gold);
+            margin-bottom: 16px;
+        }
+
+        .footer-tagline {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 60px;
+        }
+
+        .footer-column h4 {
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .footer-column a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-column a:hover {
+            color: var(--accent-gold);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border);
+            padding-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-legal {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            max-width: 700px;
+            line-height: 1.7;
+        }
+
+        .footer-catchphrase {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            color: var(--accent-gold);
+            font-style: italic;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            nav {
+                padding: 20px 24px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 100px 24px;
+            }
+
+            section {
+                padding: 80px 24px;
+            }
+
+            .trust-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .rules-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .transparency-hero {
+                padding: 40px 24px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 40px;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .modal-content {
+                padding: 32px 24px;
+                margin: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-gold);
+        }
+    </style>
+</head>
+<body>
+    <!-- Membership Modal -->
+    <div class="modal-overlay" id="membershipModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            
+            <div class="form-container" id="formContainer">
+                <div class="modal-header">
+                    <h2>Join the Swarm</h2>
+                    <p>Apply for your Cockroach Card membership</p>
+                </div>
+                
+                <form id="membershipForm">
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="+91 98765 43210" pattern="[0-9+\s-]{10,15}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required placeholder="your@email.com">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="state">State *</label>
+                            <select id="state" name="state" required>
+                                <option value="">Select State</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="district">District *</label>
+                            <select id="district" name="district" required disabled>
+                                <option value="">Select District</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="spinner"></span>
+                        <span class="btn-text">🪳 Submit Application</span>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="success-message" id="successMessage">
+                <div class="success-icon">🪳</div>
+                <h3>Welcome to the Swarm!</h3>
+                <p>Your application has been received. We'll review and get back to you within 48 hours.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skeleton Loader -->
+    <div class="skeleton-loader" id="skeletonLoader">
+        <div class="skeleton-logo">
+            <div class="skeleton-shine"></div>
+        </div>
+        <div class="skeleton-line">
+            <div class="skeleton-shine"></div>
+        </div>
+        <div class="skeleton-line short">
+            <div class="skeleton-shine"></div>
+        </div>
+        <div class="skeleton-line">
+            <div class="skeleton-shine"></div>
+        </div>
+        <div class="skeleton-spinner"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">
+            <span class="logo-icon">🪳</span>
+            <span>Cockroach Finance</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#transparency">Transparency</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#footer">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-pattern"></div>
+        <div class="hero-content">
+            <div class="hero-tag reveal">A Collective Collaboration</div>
+            <h1 class="reveal stagger-1">Cockroach Finance for Unemployment</h1>
+            <p class="hero-subtitle reveal stagger-2">Stable Money. No Politics. Just the Swarm.</p>
+            <p class="hero-description reveal stagger-3">
+                India's first fintech union for the unemployed, underemployed, and chronically online. Get the Cockroach Card.
+            </p>
+            <div class="hero-phases reveal stagger-3">
+                <div class="phase">
+                    <span class="phase-dot"></span>
+                    <span>Phase 1: Stable Income</span>
+                </div>
+                <div class="phase">
+                    <span class="phase-dot"></span>
+                    <span>Phase 2: Stable Job</span>
+                </div>
+            </div>
+            <div class="hero-buttons reveal stagger-4">
+                <button class="btn btn-primary" onclick="openModal()">
+                    <span>🪳</span>
+                    Apply for Cockroach Card — Free
+                </button>
+                <a href="#" class="btn btn-secondary">
+                    <span>📊</span>
+                    See Our Public Ledger (Live)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Bar -->
+    <div class="trust-bar reveal">
+        <div class="trust-content">
+            <div class="trust-item">
+                <span class="trust-icon">✓</span>
+                <span>0 investors</span>
+            </div>
+            <div class="trust-item">
+                <span class="trust-icon">✓</span>
+                <span>Full Google Sheet transparency</span>
+            </div>
+            <div class="trust-item">
+                <span class="trust-icon">✓</span>
+                <span>Backed by nothing but each other</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works">
+        <div class="section-header">
+            <div class="section-tag reveal">The Process</div>
+            <h2 class="reveal stagger-1">How It Works</h2>
+            <p class="section-subtitle reveal stagger-2">Four simple steps to join the swarm</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step-card reveal reveal-left">
+                <div class="step-number">1</div>
+                <h3 class="step-title">You Qualify</h3>
+                <p class="step-quote">"Unemployed? Lazy? Chronically online? You're in."</p>
+                <ul class="checklist">
+                    <li>Unemployed OR gig worker (Zomato, Swiggy, Uber, Urban Company, or daily wage)</li>
+                    <li>Has a smartphone and UPI ID</li>
+                    <li>No pending criminal charges (self-declared)</li>
+                    <li>No drug-related convictions in last 5 years</li>
+                </ul>
+            </div>
+            <div class="step-card reveal stagger-1 reveal-scale">
+                <div class="step-number">2</div>
+                <h3 class="step-title">Get the Cockroach Card</h3>
+                <p style="color: var(--text-secondary); margin-top: 16px;">
+                    A wallet to fulfill phase 1. Your gateway to financial stability within the swarm.
+                </p>
+            </div>
+            <div class="step-card reveal stagger-2 reveal-right">
+                <div class="step-number">3</div>
+                <h3 class="step-title">You Get Insurance</h3>
+                <p style="color: var(--text-secondary); margin-top: 16px;">
+                    Auto-enrolled coverage. Protection for every member of the collective.
+                </p>
+            </div>
+            <div class="step-card reveal stagger-3 reveal-left">
+                <div class="step-number">4</div>
+                <h3 class="step-title">Refer & Earn</h3>
+                <p style="color: var(--text-secondary); margin-top: 16px;">
+                    Turn the swarm into your salary. Refer 2 friends for your account activation.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Transparency Section -->
+    <section id="transparency">
+        <div class="section-header">
+            <div class="section-tag reveal">Open Books</div>
+            <h2 class="reveal stagger-1">Transparency Ledger</h2>
+        </div>
+        
+        <div class="transparency-hero reveal stagger-2">
+            <h2 style="margin-bottom: 16px;">Every Rupee. Every Minute. Public.</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 8px;">
+                Date · Time · Income / Expense · Member name / ID
+            </p>
+            <a href="#" class="ledger-btn">
+                <span>📊</span>
+                View Live Google Sheet
+            </a>
+        </div>
+
+        <div class="rules-grid">
+            <div class="rule-card reveal reveal-left">
+                <div class="rule-number">1</div>
+                <h4 class="rule-title">Full Transparency</h4>
+                <p class="rule-desc">Every transaction visible to every member</p>
+            </div>
+            <div class="rule-card reveal stagger-1 reveal-scale">
+                <div class="rule-number">2</div>
+                <h4 class="rule-title">User Suggestions</h4>
+                <p class="rule-desc">Community-driven income methods</p>
+            </div>
+            <div class="rule-card reveal stagger-2 reveal-right">
+                <div class="rule-number">3</div>
+                <h4 class="rule-title">No Deletions</h4>
+                <p class="rule-desc">Only strikethroughs with explanations</p>
+            </div>
+        </div>
+
+        <div class="motive-box reveal">
+            <p>"To make the life of each cockroach better. This ruling party or government has no influence or presence in their life."</p>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq">
+        <div class="section-header">
+            <div class="section-tag reveal">Questions</div>
+            <h2 class="reveal stagger-1">Frequently Asked</h2>
+        </div>
+        <div class="faq-container">
+            <div class="faq-item reveal">
+                <div class="faq-question">
+                    <span>Is this a political party?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>No. We are a fintech company not interested in politics.</p>
+                </div>
+            </div>
+            <div class="faq-item reveal stagger-1">
+                <div class="faq-question">
+                    <span>Where does the money come from?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Crowd pool + investment returns. Every rupee is tracked in our public ledger.</p>
+                </div>
+            </div>
+            <div class="faq-item reveal stagger-2">
+                <div class="faq-question">
+                    <span>What if I get a job?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Congratulations. Keep the card. You can donate and help others in the swarm.</p>
+                </div>
+            </div>
+            <div class="faq-item reveal stagger-3">
+                <div class="faq-question">
+                    <span>Is my data safe?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>We only share anonymized company financial details. No names. No UPI IDs. Ever. We don't share any private data.</p>
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question">
+                    <span>What stops you from running away with the money?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>The public Google Sheet. Watch every rupee. If we steal, you will see it in real time.</p>
+                </div>
+            </div>
+            <div class="faq-item reveal stagger-1">
+                <div class="faq-question">
+                    <span>The government blocked CJP on X. What if they block you?</span>
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>We make sure we don't do anything against Indian rules.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="footer">
+        <div class="footer-content">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">🪳 Cockroach Finance</div>
+                    <p class="footer-tagline">
+                        They insulted us. We organized. Now we own the swarm.
+                    </p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Navigate</h4>
+                        <a href="#how-it-works">How It Works</a>
+                        <a href="#transparency">Transparency Ledger</a>
+                        <a href="#faq">FAQ</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Community</h4>
+                        <a href="#">The Bloc</a>
+                        <a href="#">Discord</a>
+                        <a href="#">Telegram</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-legal">
+                    Cockroach Finance Pvt Ltd (Inc. under MCA, awaiting RBI NBFC-MFI approval). This is not a bank deposit. Locked funds are held in an escrow account with [Partner Bank Name]. Insurance via PMSBY – terms apply.
+                </p>
+                <p class="footer-catchphrase">"They insulted us. We organized. Now we own the swarm."</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Indian States and Districts Data
+        const stateDistricts = {
+            "Andhra Pradesh": ["Anantapur", "Chittoor", "East Godavari", "Guntur", "Kadapa", "Krishna", "Kurnool", "Nellore", "Prakasam", "Srikakulam", "Visakhapatnam", "Vizianagaram", "West Godavari"],
+            "Arunachal Pradesh": ["Tawang", "West Kameng", "East Kameng", "Papum Pare", "Lower Subansiri", "Upper Subansiri", "West Siang", "East Siang", "Upper Siang", "Lower Siang", "Changlang", "Tirap", "Longding"],
+            "Assam": ["Baksa", "Barpeta", "Bongaigaon", "Cachar", "Charaideo", "Chirang", "Darrang", "Dhemaji", "Dhubri", "Dibrugarh", "Dima Hasao", "Goalpara", "Golaghat", "Hailakandi", "Jorhat", "Kamrup", "Kamrup Metropolitan", "Karbi Anglong", "Karimganj", "Kokrajhar", "Lakhimpur", "Majuli", "Morigaon", "Nagaon", "Nalbari", "Sivasagar", "Sonitpur", "South Salmara-Mankachar", "Tinsukia", "Udalguri"],
+            "Bihar": ["Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar", "Darbhanga", "East Champaran", "Gaya", "Gopalganj", "Jamui", "Jehanabad", "Kaimur", "Katihar", "Khagaria", "Kishanganj", "Lakhisarai", "Madhepura", "Madhubani", "Munger", "Muzaffarpur", "Nalanda", "Nawada", "Patna", "Purnia", "Rohtas", "Saharsa", "Samastipur", "Saran", "Sheikhpura", "Sheohar", "Sitamarhi", "Siwan", "Supaul", "Vaishali", "West Champaran"],
+            "Chhattisgarh": ["Balod", "Baloda Bazar", "Balrampur", "Bastar", "Bemetara", "Bijapur", "Bilaspur", "Dantewada", "Dhamtari", "Durg", "Gariaband", "Janjgir-Champa", "Jashpur", "Kabirdham", "Kanker", "Kondagaon", "Korba", "Koriya", "Mahasamund", "Mungeli", "Narayanpur", "Raigarh", "Raipur", "Rajnandgaon", "Sukma", "Surajpur", "Surguja"],
+            "Goa": ["North Goa", "South Goa"],
+            "Gujarat": ["Ahmedabad", "Amreli", "Anand", "Aravalli", "Banaskantha", "Bharuch", "Bhavnagar", "Botad", "Chhota Udaipur", "Dahod", "Dang", "Devbhoomi Dwarka", "Gandhinagar", "Gir Somnath", "Jamnagar", "Junagadh", "Kheda", "Kutch", "Mahisagar", "Mehsana", "Morbi", "Narmada", "Navsari", "Panchmahal", "Patan", "Porbandar", "Rajkot", "Sabarkantha", "Surat", "Surendranagar", "Tapi", "Vadodara", "Valsad"],
+            "Haryana": ["Ambala", "Bhiwani", "Charkhi Dadri", "Faridabad", "Fatehabad", "Gurugram", "Hisar", "Jhajjar", "Jind", "Kaithal", "Karnal", "Kurukshetra", "Mahendragarh", "Nuh", "Palwal", "Panchkula", "Panipat", "Rewari", "Rohtak", "Sirsa", "Sonipat", "Yamunanagar"],
+            "Himachal Pradesh": ["Bilaspur", "Chamba", "Hamirpur", "Kangra", "Kinnaur", "Kullu", "Lahaul and Spiti", "Mandi", "Shimla", "Sirmaur", "Solan", "Una"],
+            "Jharkhand": ["Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka", "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla", "Hazaribagh", "Jamtara", "Khunti", "Koderma", "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh", "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum"],
+            "Karnataka": ["Bagalkot", "Ballari", "Belagavi", "Bengaluru Rural", "Bengaluru Urban", "Bidar", "Chamarajanagar", "Chikballapur", "Chikkamagaluru", "Chitradurga", "Dakshina Kannada", "Davanagere", "Dharwad", "Gadag", "Hassan", "Haveri", "Kalaburagi", "Kodagu", "Kolar", "Koppal", "Mandya", "Mysuru", "Raichur", "Ramanagara", "Shivamogga", "Tumakuru", "Udupi", "Uttara Kannada", "Vijayapura", "Yadgir"],
+            "Kerala": ["Alappuzha", "Ernakulam", "Idukki", "Kannur", "Kasaragod", "Kollam", "Kottayam", "Kozhikode", "Malappuram", "Palakkad", "Pathanamthitta", "Thiruvananthapuram", "Thrissur", "Wayanad"],
+            "Madhya Pradesh": ["Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal", "Burhanpur", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior", "Harda", "Hoshangabad", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Mandla", "Mandsaur", "Morena", "Narsinghpur", "Neemuch", "Niwari", "Panna", "Raisen", "Rajgarh", "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri", "Sidhi", "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"],
+            "Maharashtra": ["Ahmednagar", "Akola", "Amravati", "Aurangabad", "Beed", "Bhandara", "Buldhana", "Chandrapur", "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon", "Jalna", "Kolhapur", "Latur", "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded", "Nandurbar", "Nashik", "Osmanabad", "Palghar", "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur", "Thane", "Wardha", "Washim", "Yavatmal"],
+            "Manipur": ["Bishnupur", "Chandel", "Churachandpur", "Imphal East", "Imphal West", "Jiribam", "Kakching", "Kamjong", "Kangpokpi", "Noney", "Pherzawl", "Senapati", "Tamenglong", "Tengnoupal", "Thoubal", "Ukhrul"],
+            "Meghalaya": ["East Garo Hills", "East Jaintia Hills", "East Khasi Hills", "North Garo Hills", "Ri Bhoi", "South Garo Hills", "South West Garo Hills", "South West Khasi Hills", "West Garo Hills", "West Jaintia Hills", "West Khasi Hills"],
+            "Mizoram": ["Aizawl", "Champhai", "Hnahthial", "Khawzawl", "Kolasib", "Lawngtlai", "Lunglei", "Mamit", "Saiha", "Saitual", "Serchhip"],
+            "Nagaland": ["Chumukedima", "Dimapur", "Kiphire", "Kohima", "Longleng", "Mokokchung", "Mon", "Niuland", "Noklak", "Peren", "Phek", "Shamator", "Tuensang", "Wokha", "Zunheboto"],
+            "Odisha": ["Angul", "Balangir", "Balasore", "Bargarh", "Bhadrak", "Boudh", "Cuttack", "Deogarh", "Dhenkanal", "Gajapati", "Ganjam", "Jagatsinghpur", "Jajpur", "Jharsuguda", "Kalahandi", "Kandhamal", "Kendrapara", "Kendujhar", "Khordha", "Koraput", "Malkangiri", "Mayurbhanj", "Nabarangpur", "Nayagarh", "Nuapada", "Puri", "Rayagada", "Sambalpur", "Subarnapur", "Sundargarh"],
+            "Punjab": ["Amritsar", "Barnala", "Bathinda", "Faridkot", "Fatehgarh Sahib", "Fazilka", "Ferozepur", "Gurdaspur", "Hoshiarpur", "Jalandhar", "Kapurthala", "Ludhiana", "Mansa", "Moga", "Mohali", "Muktsar", "Pathankot", "Patiala", "Rupnagar", "Sangrur", "Shaheed Bhagat Singh Nagar", "Tarn Taran"],
+            "Rajasthan": ["Ajmer", "Alwar", "Banswara", "Baran", "Barmer", "Bharatpur", "Bhilwara", "Bikaner", "Bundi", "Chittorgarh", "Churu", "Dausa", "Dholpur", "Dungarpur", "Hanumangarh", "Jaipur", "Jaisalmer", "Jalore", "Jhalawar", "Jhunjhunu", "Jodhpur", "Karauli", "Kota", "Nagaur", "Pali", "Pratapgarh", "Rajsamand", "Sawai Madhopur", "Sikar", "Sirohi", "Sri Ganganagar", "Tonk", "Udaipur"],
+            "Sikkim": ["East Sikkim", "North Sikkim", "South Sikkim", "West Sikkim"],
+            "Tamil Nadu": ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"],
+            "Telangana": ["Adilabad", "Bhadradri Kothagudem", "Hyderabad", "Jagtial", "Jangaon", "Jayashankar Bhupalpally", "Jogulamba Gadwal", "Kamareddy", "Karimnagar", "Khammam", "Kumuram Bheem Asifabad", "Mahabubabad", "Mahabubnagar", "Mancherial", "Medak", "Medchal-Malkajgiri", "Mulugu", "Nagarkurnool", "Nalgonda", "Narayanpet", "Nirmal", "Nizamabad", "Peddapalli", "Rajanna Sircilla", "Ranga Reddy", "Sangareddy", "Siddipet", "Suryapet", "Vikarabad", "Wanaparthy", "Warangal Rural", "Warangal Urban", "Yadadri Bhuvanagiri"],
+            "Tripura": ["Dhalai", "Gomati", "Khowai", "North Tripura", "Sepahijala", "South Tripura", "Unakoti", "West Tripura"],
+            "Uttar Pradesh": ["Agra", "Aligarh", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Ayodhya", "Azamgarh", "Badaun", "Baghpat", "Bahraich", "Ballia", "Balrampur", "Banda", "Barabanki", "Bareilly", "Basti", "Bhadohi", "Bijnor", "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", "Etawah", "Farrukhabad", "Fatehpur", "Firozabad", "Gautam Buddha Nagar", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur", "Hapur", "Hardoi", "Hathras", "Jalaun", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar", "Kasganj", "Kaushambi", "Kheri", "Kushinagar", "Lalitpur", "Lucknow", "Maharajganj", "Mahoba", "Mainpuri", "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Prayagraj", "Raebareli", "Rampur", "Saharanpur", "Sambhal", "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shravasti", "Siddharthnagar", "Sitapur", "Sonbhadra", "Sultanpur", "Unnao", "Varanasi"],
+            "Uttarakhand": ["Almora", "Bageshwar", "Chamoli", "Champawat", "Dehradun", "Haridwar", "Nainital", "Pauri Garhwal", "Pithoragarh", "Rudraprayag", "Tehri Garhwal", "Udham Singh Nagar", "Uttarkashi"],
+            "West Bengal": ["Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Dakshin Dinajpur", "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Jhargram", "Kalimpong", "Kolkata", "Malda", "Murshidabad", "Nadia", "North 24 Parganas", "Paschim Bardhaman", "Paschim Medinipur", "Purba Bardhaman", "Purba Medinipur", "Purulia", "South 24 Parganas", "Uttar Dinajpur"],
+            "Andaman and Nicobar Islands": ["Nicobar", "North and Middle Andaman", "South Andaman"],
+            "Chandigarh": ["Chandigarh"],
+            "Dadra and Nagar Haveli and Daman and Diu": ["Dadra and Nagar Haveli", "Daman", "Diu"],
+            "Delhi": ["Central Delhi", "East Delhi", "New Delhi", "North Delhi", "North East Delhi", "North West Delhi", "Shahdara", "South Delhi", "South East Delhi", "South West Delhi", "West Delhi"],
+            "Jammu and Kashmir": ["Anantnag", "Bandipora", "Baramulla", "Budgam", "Doda", "Ganderbal", "Jammu", "Kathua", "Kishtwar", "Kulgam", "Kupwara", "Poonch", "Pulwama", "Rajouri", "Ramban", "Reasi", "Samba", "Shopian", "Srinagar", "Udhampur"],
+            "Ladakh": ["Kargil", "Leh"],
+            "Lakshadweep": ["Lakshadweep"],
+            "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam"]
+        };
+
+        // Modal Functions
+        function openModal() {
+            document.getElementById('membershipModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            populateStates();
+        }
+
+        function closeModal() {
+            document.getElementById('membershipModal').classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                document.getElementById('membershipForm').reset();
+                document.getElementById('district').disabled = true;
+                document.getElementById('formContainer').classList.remove('hidden');
+                document.getElementById('successMessage').classList.remove('active');
+            }, 300);
+        }
+
+        // Populate States Dropdown
+        function populateStates() {
+            const stateSelect = document.getElementById('state');
+            if (stateSelect.options.length > 1) return; // Already populated
+            
+            Object.keys(stateDistricts).sort().forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+        }
+
+        // Handle State Change
+        document.getElementById('state').addEventListener('change', function() {
+            const districtSelect = document.getElementById('district');
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            
+            if (this.value) {
+                const districts = stateDistricts[this.value];
+                districts.forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+                districtSelect.disabled = false;
+            } else {
+                districtSelect.disabled = true;
+            }
+        });
+
+        // Form Submission
+        document.getElementById('membershipForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
+            const formData = {
+                fullName: document.getElementById('fullName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                state: document.getElementById('state').value,
+                district: document.getElementById('district').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Replace with your Google Apps Script Web App URL
+            const SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                // Show success message
+                document.getElementById('formContainer').classList.add('hidden');
+                document.getElementById('successMessage').classList.add('active');
+                
+            } catch (error) {
+                alert('Something went wrong. Please try again or contact support.');
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Close modal on overlay click
+        document.getElementById('membershipModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Skeleton Loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('skeletonLoader').classList.add('hidden');
+            }, 1500);
+        });
+
+        // Scroll Reveal Animation
+        const revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+
+        const revealOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            const elementVisible = 100;
+
+            revealElements.forEach((element) => {
+                const elementTop = element.getBoundingClientRect().top;
+                if (elementTop < windowHeight - elementVisible) {
+                    element.classList.add('active');
+                }
+            });
+        };
+
+        window.addEventListener('scroll', revealOnScroll);
+        revealOnScroll();
+
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                const isActive = item.classList.contains('active');
+                
+                document.querySelectorAll('.faq-item').forEach(faq => {
+                    faq.classList.remove('active');
+                });
+                
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Navbar hide/show on scroll
+        let lastScroll = 0;
+        const nav = document.querySelector('nav');
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            
+            if (currentScroll > lastScroll && currentScroll > 100) {
+                nav.style.transform = 'translateY(-100%)';
+            } else {
+                nav.style.transform = 'translateY(0)';
+            }
+            
+            lastScroll = currentScroll;
+        });
+    </script>
+</body>
+</html>
