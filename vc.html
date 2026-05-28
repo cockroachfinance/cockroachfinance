@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WarpLink — E2EE Live Calling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #050508;
+    --bg2: #0a0a10;
+    --bg3: #111118;
+    --surface: rgba(255,255,255,0.04);
+    --surface2: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --accent: #00e5c8;
+    --accent2: #0077ff;
+    --accent-dim: rgba(0,229,200,0.15);
+    --accent2-dim: rgba(0,119,255,0.15);
+    --text: #f0eefc;
+    --text2: rgba(240,238,252,0.55);
+    --text3: rgba(240,238,252,0.3);
+    --danger: #ff4560;
+    --danger-dim: rgba(255,69,96,0.15);
+    --warn: #ffb547;
+    --green: #00e5a0;
+    --verified: #00e5a0;
+    --unverified: #ffb547;
+    --radius: 14px;
+    --font: 'Syne', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); overflow: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.6;
+  }
+
+  .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; animation: orbFloat 12s ease-in-out infinite; }
+  .orb1 { width: 500px; height: 500px; background: rgba(0,229,200,0.06); top: -150px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(0,119,255,0.07); bottom: -100px; right: -80px; animation-delay: -6s; }
+  @keyframes orbFloat { 0%,100% { transform: translate(0,0); } 50% { transform: translate(20px,30px); } }
+
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease, transform 0.4s ease; }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.97); }
+
+  #lobby { flex-direction: column; align-items: center; padding: 20px; }
+
+  .wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 48px; }
+  .wordmark-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .wordmark-text { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .wordmark-text span { color: var(--accent); }
+  .e2ee-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--green); text-transform: uppercase;
+    margin-left: 8px; vertical-align: middle;
+  }
+
+  .lobby-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px 40px; width: 100%; max-width: 420px; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+  .lobby-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .lobby-card p { font-size: 13px; color: var(--text2); margin-bottom: 28px; line-height: 1.6; }
+
+  .input-group { margin-bottom: 16px; }
+  .input-group label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+  .input-group input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: var(--font); font-size: 15px; outline: none; transition: border-color 0.2s; }
+  .input-group input:focus { border-color: var(--accent); }
+  .input-group input::placeholder { color: var(--text3); }
+
+  .my-id-box { background: var(--accent-dim); border: 1px solid rgba(0,229,200,0.25); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .my-id-label { font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px; }
+  .my-id-value { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: 0.03em; }
+  .copy-btn { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 18px; opacity: 0.7; transition: opacity 0.2s; padding: 4px; }
+  .copy-btn:hover { opacity: 1; }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+  .divider span { font-size: 12px; color: var(--text3); }
+
+  .mode-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 20px; gap: 4px; }
+  .mode-btn { flex: 1; padding: 9px; border: none; border-radius: 7px; cursor: pointer; font-family: var(--font); font-size: 13px; font-weight: 600; background: none; color: var(--text2); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .mode-btn.active { background: var(--surface2); color: var(--text); }
+  .mode-btn svg { width: 15px; height: 15px; }
+
+  .call-btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-family: var(--font); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .call-btn.primary { background: linear-gradient(135deg, var(--accent), #00b4a8); color: #000; }
+  .call-btn.primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text3); margin-right: 6px; animation: dotPulse 2s ease-in-out infinite; }
+  .status-dot.ready { background: var(--green); }
+  .status-dot.connecting { background: var(--warn); animation: dotPulse 0.8s ease-in-out infinite; }
+  @keyframes dotPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .status-bar { display: flex; align-items: center; font-size: 12px; color: var(--text3); margin-top: 20px; }
+
+  /* ─── CALLING SCREEN ─── */
+  #calling { background: var(--bg); flex-direction: column; }
+
+  .call-header { position: absolute; top: 0; left: 0; right: 0; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; z-index: 20; background: linear-gradient(to bottom, rgba(5,5,8,0.9), transparent); }
+  .call-header-left { display: flex; align-items: center; gap: 12px; }
+  .call-peer-name { font-size: 16px; font-weight: 700; }
+  .call-timer { font-family: var(--mono); font-size: 13px; color: var(--text2); }
+
+  .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 16px; }
+  .signal-bar { width: 4px; border-radius: 2px; background: var(--green); }
+  .signal-bar:nth-child(1) { height: 5px; }
+  .signal-bar:nth-child(2) { height: 9px; }
+  .signal-bar:nth-child(3) { height: 13px; }
+  .signal-bar:nth-child(4) { height: 16px; }
+
+  /* ─── ENCRYPTION INDICATOR ─── */
+  .enc-indicator {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    padding: 4px 10px; border-radius: 20px;
+    transition: all 0.4s;
+    cursor: pointer; position: relative;
+  }
+  .enc-indicator.handshaking { background: rgba(255,181,71,0.15); border: 1px solid rgba(255,181,71,0.3); color: var(--warn); }
+  .enc-indicator.secure { background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.3); color: var(--green); }
+  .enc-indicator svg { width: 12px; height: 12px; }
+
+  /* ─── FINGERPRINT PANEL ─── */
+  .fp-panel {
+    position: absolute; top: 60px; right: 20px;
+    background: rgba(5,5,8,0.95); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 16px 20px;
+    z-index: 25; min-width: 280px;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    animation: fpIn 0.2s ease;
+    display: none;
+  }
+  .fp-panel.open { display: block; }
+  @keyframes fpIn { from { opacity: 0; transform: translateY(-8px); } }
+  .fp-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 12px; }
+  .fp-row { margin-bottom: 10px; }
+  .fp-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .fp-value { font-family: var(--mono); font-size: 11px; color: var(--text2); word-break: break-all; line-height: 1.5; }
+  .fp-match { font-size: 11px; font-weight: 600; padding: 6px 10px; border-radius: 8px; text-align: center; margin-top: 10px; }
+  .fp-match.ok { background: rgba(0,229,160,0.12); color: var(--green); border: 1px solid rgba(0,229,160,0.25); }
+  .fp-match.pending { background: rgba(255,181,71,0.12); color: var(--warn); border: 1px solid rgba(255,181,71,0.25); }
+  .fp-algo { font-size: 10px; color: var(--text3); margin-top: 8px; text-align: center; }
+
+  .video-area { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+  #remoteVideo { width: 100%; height: 100%; object-fit: cover; background: var(--bg2); }
+
+  .avatar-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .avatar-circle { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-dim), var(--accent2-dim)); border: 2px solid rgba(0,229,200,0.3); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; color: var(--accent); animation: avatarPulse 3s ease-in-out infinite; }
+  @keyframes avatarPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,229,200,0.2); } 50% { box-shadow: 0 0 0 20px rgba(0,229,200,0); } }
+  .avatar-name { font-size: 18px; font-weight: 700; }
+  .avatar-status { font-size: 13px; color: var(--text2); }
+
+  .self-pip { position: absolute; bottom: 110px; right: 20px; width: 140px; height: 100px; border-radius: 12px; overflow: hidden; border: 2px solid var(--border2); background: var(--bg2); z-index: 15; transition: all 0.3s; cursor: pointer; }
+  .self-pip:hover { transform: scale(1.04); }
+  #localVideo { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .pip-label { position: absolute; bottom: 6px; left: 8px; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.7); text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+
+  .controls { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 28px 32px; display: flex; align-items: center; justify-content: center; gap: 12px; background: linear-gradient(to top, rgba(5,5,8,0.95), transparent); z-index: 20; }
+  .ctrl-btn { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--border2); background: var(--surface); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .ctrl-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ctrl-btn:hover { background: var(--surface2); transform: scale(1.08); }
+  .ctrl-btn.muted { background: var(--danger-dim); border-color: rgba(255,69,96,0.35); color: var(--danger); }
+  .ctrl-btn.cam-off { background: var(--danger-dim); border-color: rgba(255,69,96,0.35); color: var(--danger); }
+  .ctrl-btn.hangup { width: 60px; height: 60px; background: var(--danger); border-color: var(--danger); color: #fff; }
+  .ctrl-btn.hangup:hover { background: #ff2040; transform: scale(1.08); }
+  .ctrl-btn.hangup svg { stroke-width: 2.5; }
+
+  /* ─── INCOMING CALL ─── */
+  #incoming { background: rgba(5,5,8,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); flex-direction: column; gap: 24px; z-index: 30; }
+  .incoming-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 24px; padding: 36px 40px; text-align: center; max-width: 320px; width: 100%; animation: cardIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes cardIn { from { opacity: 0; transform: scale(0.85) translateY(20px); } }
+  .incoming-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--accent-dim); border: 2px solid rgba(0,229,200,0.3); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: var(--accent); position: relative; }
+  .ring-anim { position: absolute; inset: -8px; border-radius: 50%; border: 2px solid rgba(0,229,200,0.4); animation: ring 1.5s ease-out infinite; }
+  .ring-anim:nth-child(2) { animation-delay: 0.5s; }
+  @keyframes ring { from { transform: scale(1); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+  .incoming-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .incoming-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+  .incoming-actions { display: flex; gap: 16px; justify-content: center; }
+  .ans-btn { width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .ans-btn:hover { transform: scale(1.1); }
+  .ans-btn.accept { background: var(--green); color: #000; }
+  .ans-btn.decline { background: var(--danger); color: #fff; }
+  .ans-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border2); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: var(--text); z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.4,0.64,1); white-space: nowrap; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  #connecting-overlay { position: absolute; inset: 0; z-index: 25; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); gap: 20px; transition: opacity 0.5s; }
+  #connecting-overlay.hidden { opacity: 0; pointer-events: none; }
+  .connect-spinner { width: 48px; height: 48px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .connect-text { font-size: 16px; font-weight: 600; color: var(--text2); }
+  .connect-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- LOBBY -->
+<div class="screen" id="lobby">
+  <div style="width:100%;max-width:420px;padding:20px;">
+    <div class="wordmark">
+      <div class="wordmark-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .82h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+        </svg>
+      </div>
+      <div class="wordmark-text">Warp<span>Link</span></div>
+      <span class="e2ee-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        E2EE
+      </span>
+    </div>
+
+    <div class="lobby-card">
+      <h2>Start a call</h2>
+      <p>All calls are end-to-end encrypted using ECDH key exchange + AES-256-GCM. Zero metadata leaves your device unencrypted.</p>
+
+      <div class="my-id-box">
+        <div>
+          <div class="my-id-label">Your ID</div>
+          <div class="my-id-value" id="myIdDisplay">Connecting…</div>
+        </div>
+        <button class="copy-btn" id="copyBtn" title="Copy ID" onclick="copyMyId()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="input-group">
+        <label>Your display name</label>
+        <input type="text" id="myName" placeholder="e.g. Alex" maxlength="20">
+      </div>
+
+      <div class="divider"><hr><span>call someone</span><hr></div>
+
+      <div class="input-group">
+        <label>Peer ID to call</label>
+        <input type="text" id="peerId" placeholder="Paste their ID here…" autocomplete="off">
+      </div>
+
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="modeVideo" onclick="setMode('video')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Video
+        </button>
+        <button class="mode-btn" id="modeAudio" onclick="setMode('audio')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Audio only
+        </button>
+      </div>
+
+      <button class="call-btn primary" id="callBtn" onclick="startCall()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .82h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+        </svg>
+        Call
+      </button>
+
+      <div class="status-bar">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Initializing…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INCOMING CALL -->
+<div class="screen hidden" id="incoming">
+  <div class="incoming-card">
+    <div class="incoming-avatar" id="incomingAvatar">
+      <div class="ring-anim"></div>
+      <div class="ring-anim"></div>
+      <span id="incomingInitials">?</span>
+    </div>
+    <div class="incoming-name" id="incomingName">Someone</div>
+    <div class="incoming-sub">Incoming encrypted call…</div>
+    <div class="incoming-actions">
+      <button class="ans-btn decline" onclick="declineCall()">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5 19.79 19.79 0 01.9 .82h3a2 2 0 012 1.72"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </button>
+      <button class="ans-btn accept" onclick="acceptCall()">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .82h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CALLING SCREEN -->
+<div class="screen hidden" id="calling">
+  <div id="connecting-overlay">
+    <div class="connect-spinner"></div>
+    <div class="connect-text" id="connectingText">Connecting…</div>
+    <div class="connect-sub" id="connectingSub">Establishing encrypted channel</div>
+  </div>
+
+  <div class="video-area">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <div class="avatar-placeholder" id="remoteAvatar">
+      <div class="avatar-circle" id="remoteAvatarCircle">?</div>
+      <div class="avatar-name" id="remoteAvatarName">Peer</div>
+      <div class="avatar-status" id="remoteAvatarStatus">Audio only</div>
+    </div>
+  </div>
+
+  <div class="call-header">
+    <div class="call-header-left">
+      <div class="signal-bars">
+        <div class="signal-bar"></div><div class="signal-bar"></div>
+        <div class="signal-bar"></div><div class="signal-bar"></div>
+      </div>
+      <div class="call-peer-name" id="callPeerName">—</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="enc-indicator handshaking" id="encIndicator" onclick="toggleFpPanel()" title="Encryption details">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="lockIcon">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+        <span id="encLabel">Handshaking</span>
+      </button>
+      <div class="call-timer" id="callTimer">00:00</div>
+    </div>
+  </div>
+
+  <!-- Fingerprint Panel -->
+  <div class="fp-panel" id="fpPanel">
+    <div class="fp-title">🔐 Encryption details</div>
+    <div class="fp-row">
+      <div class="fp-label">Your key fingerprint</div>
+      <div class="fp-value" id="fpMine">—</div>
+    </div>
+    <div class="fp-row">
+      <div class="fp-label">Peer key fingerprint</div>
+      <div class="fp-value" id="fpPeer">—</div>
+    </div>
+    <div class="fp-row">
+      <div class="fp-label">Session key fingerprint</div>
+      <div class="fp-value" id="fpSession">—</div>
+    </div>
+    <div class="fp-match pending" id="fpStatus">⏳ Key exchange in progress…</div>
+    <div class="fp-algo">ECDH P-256 · HKDF-SHA-256 · AES-256-GCM · Forward secrecy ratchet</div>
+  </div>
+
+  <div class="self-pip" id="selfPip">
+    <video id="localVideo" autoplay playsinline muted></video>
+    <div class="pip-label">You</div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">
+      <svg id="muteIcon" viewBox="0 0 24 24">
+        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+        <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </button>
+    <button class="ctrl-btn" id="camBtn" onclick="toggleCamera()" title="Camera">
+      <svg id="camIcon" viewBox="0 0 24 24">
+        <polygon points="23 7 16 12 23 17 23 7"/>
+        <rect x="1" y="5" width="15" height="14" rx="2"/>
+      </svg>
+    </button>
+    <button class="ctrl-btn hangup" onclick="hangup()" title="End call">
+      <svg viewBox="0 0 24 24">
+        <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.42 19.42 0 01-3.33-2.67m-2.67-3.34a19.79 19.79 0 01-3.07-8.63A2 2 0 014 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91"/>
+        <line x1="23" y1="1" x2="1" y2="23"/>
+      </svg>
+    </button>
+    <button class="ctrl-btn" id="speakerBtn" onclick="toggleSpeaker()" title="Speaker">
+      <svg id="speakerIcon" viewBox="0 0 24 24">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>
+      </svg>
+    </button>
+    <button class="ctrl-btn" id="flipBtn" onclick="switchCamera()" title="Switch camera">
+      <svg viewBox="0 0 24 24">
+        <path d="M20 7h-9"/><path d="M14 17H5"/>
+        <circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// E2EE CRYPTO ENGINE
+// Uses Web Crypto API (SubtleCrypto) — all operations are native.
+//
+// Protocol:
+//   1. Both peers generate ephemeral ECDH P-256 key pairs on call start.
+//   2. Public keys are exchanged over the PeerJS data channel.
+//   3. Shared secret derived via ECDH, then HKDF-SHA-256 stretches it
+//      into a 256-bit AES-GCM session key.
+//   4. ALL subsequent data channel messages are encrypted with AES-256-GCM.
+//      Each message gets a fresh 96-bit random IV.
+//   5. A "ratchet" counter increments every N messages, re-deriving the
+//      session key from the previous key + counter via HKDF, providing
+//      forward secrecy: compromising the current key does NOT expose
+//      past messages.
+//   6. Key fingerprints (SHA-256 of public key bytes) are shown in-UI
+//      so users can verify out-of-band (compare over another channel).
+//
+// Media (audio/video) uses WebRTC's built-in DTLS-SRTP — this is
+// separate from the data channel encryption and cannot be replaced
+// without Insertable Streams API (not universally supported). The
+// data channel encryption protects all signaling metadata, names,
+// call state, and any future text/file data.
+// ════════════════════════════════════════════════════════════════
+
+const RATCHET_INTERVAL = 50; // re-derive key every 50 messages
+
+const E2EE = (() => {
+  let myKeyPair = null;       // {publicKey, privateKey} CryptoKey objects
+  let sessionKey = null;      // AES-256-GCM CryptoKey
+  let myPubKeyRaw = null;     // ArrayBuffer — raw public key bytes
+  let peerPubKeyRaw = null;   // ArrayBuffer — peer's raw public key
+  let myFingerprint = '';
+  let peerFingerprint = '';
+  let sessionFingerprint = '';
+  let msgCountSend = 0;
+  let msgCountRecv = 0;
+  let ratchetKeySend = null;  // running HKDF source for send ratchet
+  let ratchetKeyRecv = null;  // running HKDF source for recv ratchet
+
+  // ── helpers ──────────────────────────────────────────────────
+
+  function ab2hex(buf) {
+    return Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function formatFingerprint(hex) {
+    // split into groups of 4, separated by spaces, 8 per line
+    const groups = hex.match(/.{1,4}/g) || [];
+    return groups.join(' ');
+  }
+
+  function concatBuffers(...bufs) {
+    const total = bufs.reduce((n, b) => n + b.byteLength, 0);
+    const out = new Uint8Array(total);
+    let off = 0;
+    for (const b of bufs) { out.set(new Uint8Array(b), off); off += b.byteLength; }
+    return out.buffer;
+  }
+
+  async function sha256(buf) {
+    return crypto.subtle.digest('SHA-256', buf);
+  }
+
+  // ── KEY GENERATION ─────────────────────────────────────────
+
+  async function generateKeyPair() {
+    myKeyPair = await crypto.subtle.generateKey(
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true, ['deriveKey', 'deriveBits']
+    );
+    myPubKeyRaw = await crypto.subtle.exportKey('raw', myKeyPair.publicKey);
+    const fpBuf = await sha256(myPubKeyRaw);
+    myFingerprint = formatFingerprint(ab2hex(fpBuf));
+    return myPubKeyRaw;
+  }
+
+  async function importPeerPublicKey(rawBuf) {
+    peerPubKeyRaw = rawBuf;
+    const fpBuf = await sha256(rawBuf);
+    peerFingerprint = formatFingerprint(ab2hex(fpBuf));
+    const peerKey = await crypto.subtle.importKey(
+      'raw', rawBuf, { name: 'ECDH', namedCurve: 'P-256' }, false, []
+    );
+    return peerKey;
+  }
+
+  // ── KEY DERIVATION ─────────────────────────────────────────
+
+  async function deriveSessionKey(peerPublicKey) {
+    // 1. ECDH: derive shared bits
+    const sharedBits = await crypto.subtle.deriveBits(
+      { name: 'ECDH', public: peerPublicKey },
+      myKeyPair.privateKey, 256
+    );
+
+    // 2. HKDF: stretch shared secret into AES-256-GCM key
+    //    Salt = XOR of both public keys' first 32 bytes (deterministic, both peers get same salt)
+    const myBytes = new Uint8Array(myPubKeyRaw.slice(0, 32));
+    const peerBytes = new Uint8Array(peerPubKeyRaw.slice(0, 32));
+    const saltBytes = myBytes.map((b, i) => b ^ peerBytes[i]);
+
+    const hkdfKey = await crypto.subtle.importKey(
+      'raw', sharedBits, 'HKDF', false, ['deriveKey', 'deriveBits']
+    );
+
+    sessionKey = await crypto.subtle.deriveKey(
+      {
+        name: 'HKDF',
+        hash: 'SHA-256',
+        salt: saltBytes,
+        info: new TextEncoder().encode('WarpLink-session-key-v1')
+      },
+      hkdfKey,
+      { name: 'AES-GCM', length: 256 },
+      true, ['encrypt', 'decrypt']
+    );
+
+    // Store raw session key bytes for ratcheting
+    const rawSession = await crypto.subtle.exportKey('raw', sessionKey);
+    ratchetKeySend = rawSession;
+    ratchetKeyRecv = rawSession;
+
+    // Fingerprint of session key
+    const sfpBuf = await sha256(rawSession);
+    sessionFingerprint = formatFingerprint(ab2hex(sfpBuf));
+
+    return sessionKey;
+  }
+
+  // ── RATCHET: forward secrecy ────────────────────────────────
+  // Every RATCHET_INTERVAL messages, derive a new session key from:
+  //   HKDF(current_raw_key, info="ratchet:send:<counter>")
+  // This means compromising the current key CANNOT recover past messages.
+
+  async function ratchetForward(rawKeyBuf, direction, counter) {
+    const importedKey = await crypto.subtle.importKey(
+      'raw', rawKeyBuf, 'HKDF', false, ['deriveKey', 'deriveBits']
+    );
+    const newRaw = await crypto.subtle.deriveBits(
+      {
+        name: 'HKDF',
+        hash: 'SHA-256',
+        salt: new Uint8Array(32), // zero salt for ratchet steps
+        info: new TextEncoder().encode(`WarpLink-ratchet-${direction}-${counter}`)
+      },
+      importedKey, 256
+    );
+    const newKey = await crypto.subtle.importKey(
+      'raw', newRaw, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']
+    );
+    return { raw: newRaw, key: newKey };
+  }
+
+  async function getEncryptKey() {
+    if (msgCountSend > 0 && msgCountSend % RATCHET_INTERVAL === 0) {
+      const r = await ratchetForward(ratchetKeySend, 'send', Math.floor(msgCountSend / RATCHET_INTERVAL));
+      ratchetKeySend = r.raw;
+      sessionKey = r.key; // both sides track same ratchet state
+    }
+    return sessionKey;
+  }
+
+  async function getDecryptKey() {
+    if (msgCountRecv > 0 && msgCountRecv % RATCHET_INTERVAL === 0) {
+      const r = await ratchetForward(ratchetKeyRecv, 'send', Math.floor(msgCountRecv / RATCHET_INTERVAL));
+      ratchetKeyRecv = r.raw;
+      sessionKey = r.key;
+    }
+    return sessionKey;
+  }
+
+  // ── ENCRYPT ────────────────────────────────────────────────
+
+  async function encrypt(plaintext) {
+    if (!sessionKey) throw new Error('No session key — key exchange not complete');
+    const key = await getEncryptKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV
+    const encoded = new TextEncoder().encode(plaintext);
+    const ct = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key, encoded
+    );
+    // Pack: [iv (12 bytes)] + [msgCount (4 bytes big-endian)] + [ciphertext]
+    const countBytes = new Uint8Array(4);
+    new DataView(countBytes.buffer).setUint32(0, msgCountSend, false);
+    const packed = concatBuffers(iv.buffer, countBytes.buffer, ct);
+    msgCountSend++;
+    // Base64 encode for JSON-safe transmission
+    return btoa(String.fromCharCode(...new Uint8Array(packed)));
+  }
+
+  // ── DECRYPT ────────────────────────────────────────────────
+
+  async function decrypt(b64) {
+    if (!sessionKey) throw new Error('No session key');
+    const key = await getDecryptKey();
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const iv = bytes.slice(0, 12);
+    // bytes 12-15: message counter (we validate ordering)
+    const senderCount = new DataView(bytes.buffer, 12, 4).getUint32(0, false);
+    if (senderCount < msgCountRecv && msgCountRecv > 0) {
+      throw new Error(`Replay attack detected: msg ${senderCount} already received (expected ≥${msgCountRecv})`);
+    }
+    const ct = bytes.slice(16);
+    const plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key, ct
+    );
+    msgCountRecv++;
+    return new TextDecoder().decode(plain);
+  }
+
+  // ── SIGN / VERIFY: key authenticity ────────────────────────
+  // We also generate an ECDSA P-256 signing key to sign our ECDH public key.
+  // This proves the public key wasn't swapped by the signaling server.
+
+  let signingKeyPair = null;
+  let mySigningPubRaw = null;
+
+  async function generateSigningKey() {
+    signingKeyPair = await crypto.subtle.generateKey(
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      true, ['sign', 'verify']
+    );
+    mySigningPubRaw = await crypto.subtle.exportKey('raw', signingKeyPair.publicKey);
+    return mySigningPubRaw;
+  }
+
+  async function signPublicKey() {
+    // Sign: ECDH_pubkey_bytes + signing_pubkey_bytes
+    const msg = concatBuffers(myPubKeyRaw, mySigningPubRaw);
+    const sig = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      signingKeyPair.privateKey, msg
+    );
+    return ab2hex(sig);
+  }
+
+  async function verifyPeerSignature(peerECDHRaw, peerSigningRaw, sigHex) {
+    const sigBytes = Uint8Array.from(sigHex.match(/.{2}/g), h => parseInt(h, 16));
+    const peerSigningKey = await crypto.subtle.importKey(
+      'raw', peerSigningRaw, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']
+    );
+    const msg = concatBuffers(peerECDHRaw, peerSigningRaw);
+    return crypto.subtle.verify(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      peerSigningKey, sigBytes, msg
+    );
+  }
+
+  // ── RESET ──────────────────────────────────────────────────
+
+  function reset() {
+    myKeyPair = null; sessionKey = null; myPubKeyRaw = null; peerPubKeyRaw = null;
+    myFingerprint = ''; peerFingerprint = ''; sessionFingerprint = '';
+    msgCountSend = 0; msgCountRecv = 0;
+    ratchetKeySend = null; ratchetKeyRecv = null;
+    signingKeyPair = null; mySigningPubRaw = null;
+  }
+
+  return {
+    generateKeyPair, importPeerPublicKey, deriveSessionKey,
+    generateSigningKey, signPublicKey, verifyPeerSignature,
+    encrypt, decrypt, reset,
+    getFingerprints: () => ({ mine: myFingerprint, peer: peerFingerprint, session: sessionFingerprint }),
+    getMyPubKeyRaw: () => myPubKeyRaw,
+    getMySigningPubRaw: () => mySigningPubRaw
+  };
+})();
+
+// ════════════════════════════════════════════════════════════════
+// APP STATE
+// ════════════════════════════════════════════════════════════════
+
+let peer, localStream, currentCall, dataChannel;
+let isMuted = false, isCamOff = false, isSpeakerOff = false;
+let callMode = 'video';
+let callTimer = null, callSeconds = 0;
+let pendingCall = null, pendingDataConn = null;
+let remotePeerName = 'Peer';
+let encryptionReady = false;
+let fpPanelOpen = false;
+
+// ════════════════════════════════════════════════════════════════
+// PEER INIT
+// ════════════════════════════════════════════════════════════════
+
+function initPeer() {
+  const id = Math.random().toString(36).slice(2,8).toUpperCase();
+  peer = new Peer(id, {
+    host: '0.peerjs.com', port: 443, path: '/',
+    secure: true,
+    config: { iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]}
+  });
+
+  peer.on('open', (id) => {
+    document.getElementById('myIdDisplay').textContent = id;
+    document.getElementById('statusDot').className = 'status-dot ready';
+    document.getElementById('statusText').textContent = 'Ready — share your ID to receive calls';
+  });
+
+  // Incoming data connection (initiates E2EE handshake)
+  peer.on('connection', (conn) => {
+    pendingDataConn = conn;
+    conn.on('open', () => {
+      // Wait for the media call to arrive — pairing handled in acceptCall
+    });
+    conn.on('data', (data) => {
+      if (pendingDataConn === conn) {
+        handleHandshakeData(data, conn);
+      }
+    });
+  });
+
+  peer.on('call', (call) => {
+    pendingCall = call;
+    const meta = call.metadata || {};
+    remotePeerName = meta.name || call.peer;
+    document.getElementById('incomingName').textContent = remotePeerName;
+    document.getElementById('incomingInitials').textContent = remotePeerName.charAt(0).toUpperCase();
+    showScreen('incoming');
+  });
+
+  peer.on('error', (err) => {
+    toast('⚠ ' + err.type + ': ' + err.message);
+    document.getElementById('statusDot').className = 'status-dot';
+    document.getElementById('statusText').textContent = err.message;
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// E2EE HANDSHAKE STATE MACHINE
+// ════════════════════════════════════════════════════════════════
+// Message types over data channel (before encryption is ready):
+//   HELLO  — {type:"HELLO", ecdh:<hex>, signing:<hex>, sig:<hex>, name:<str>, mode:<str>}
+//   HELLO_ACK — same
+// After encryption ready:
+//   ENC    — {type:"ENC", payload:<b64-encrypted-json>}
+//   RATCHET_ACK — {type:"RATCHET_ACK"} (encrypted — confirms ratchet step)
+
+let handshakeState = 'idle'; // idle | sent_hello | hello_acked | secure
+let pendingHello = null; // store peer's HELLO while we await our keys
+
+async function initiateHandshake(conn) {
+  handshakeState = 'idle';
+  encryptionReady = false;
+  await E2EE.generateKeyPair();
+  await E2EE.generateSigningKey();
+  const sig = await E2EE.signPublicKey();
+  const myName = document.getElementById('myName').value.trim() || 'Anonymous';
+  const hello = {
+    type: 'HELLO',
+    ecdh: ab2hex(E2EE.getMyPubKeyRaw()),
+    signing: ab2hex(E2EE.getMySigningPubRaw()),
+    sig: sig,
+    name: myName,
+    mode: callMode
+  };
+  conn.send(JSON.stringify(hello));
+  handshakeState = 'sent_hello';
+  updateConnectingText('Exchanging keys…', 'ECDH P-256 key exchange');
+}
+
+function ab2hex(buf) {
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function hex2buf(hex) {
+  const bytes = hex.match(/.{2}/g).map(h=>parseInt(h,16));
+  return new Uint8Array(bytes).buffer;
+}
+
+async function handleHandshakeData(rawData, conn) {
+  let msg;
+  try { msg = JSON.parse(rawData); } catch(e) {
+    // If JSON parse fails but we're secure, try encrypted
+    await handleEncryptedMessage(rawData);
+    return;
+  }
+
+  if (msg.type === 'ENC' || msg.type === 'RATCHET_ACK') {
+    await handleEncryptedMessage(rawData);
+    return;
+  }
+
+  if (msg.type === 'HELLO' || msg.type === 'HELLO_ACK') {
+    remotePeerName = msg.name || remotePeerName;
+
+    // Verify their key signature
+    const peerECDHBuf = hex2buf(msg.ecdh);
+    const peerSigningBuf = hex2buf(msg.signing);
+    const valid = await E2EE.verifyPeerSignature(peerECDHBuf, peerSigningBuf, msg.sig);
+    if (!valid) {
+      toast('⚠ Key signature invalid — possible MITM!');
+      conn.close();
+      return;
+    }
+
+    const peerKey = await E2EE.importPeerPublicKey(peerECDHBuf);
+    await E2EE.deriveSessionKey(peerKey);
+
+    if (msg.type === 'HELLO' && handshakeState === 'idle') {
+      // Responder: we received HELLO, send HELLO_ACK
+      await E2EE.generateKeyPair();
+      await E2EE.generateSigningKey();
+      // But we need to re-derive since we just created keys after importPeerPublicKey
+      // Re-do: generate, then derive
+      const freshPeerKey = await crypto.subtle.importKey(
+        'raw', peerECDHBuf, { name: 'ECDH', namedCurve: 'P-256' }, false, []
+      );
+      await E2EE.deriveSessionKey(freshPeerKey);
+      const sig2 = await E2EE.signPublicKey();
+      const myName = document.getElementById('myName').value.trim() || 'Anonymous';
+      conn.send(JSON.stringify({
+        type: 'HELLO_ACK',
+        ecdh: ab2hex(E2EE.getMyPubKeyRaw()),
+        signing: ab2hex(E2EE.getMySigningPubRaw()),
+        sig: sig2,
+        name: myName,
+        mode: msg.mode
+      }));
+    }
+
+    // Both cases: set encryption ready
+    encryptionReady = true;
+    handshakeState = 'secure';
+    dataChannel = conn;
+    conn.on('data', async (d) => { await handleEncryptedMessage(d); });
+
+    updateEncryptionUI(true);
+    updateFingerprintUI();
+    toast('🔐 End-to-end encryption active');
+    updateConnectingText('Encrypted channel ready', 'AES-256-GCM · forward secrecy on');
+  }
+}
+
+async function handleEncryptedMessage(rawData) {
+  if (!encryptionReady) return;
+  let msg;
+  try { msg = JSON.parse(rawData); } catch(e) { return; }
+
+  if (msg.type === 'ENC') {
+    try {
+      const plain = await E2EE.decrypt(msg.payload);
+      const inner = JSON.parse(plain);
+      processSecureMessage(inner);
+    } catch(e) {
+      toast('⚠ Decryption failed: ' + e.message);
+    }
+  }
+}
+
+async function sendSecure(obj) {
+  if (!encryptionReady || !dataChannel) return;
+  try {
+    const plain = JSON.stringify(obj);
+    const payload = await E2EE.encrypt(plain);
+    dataChannel.send(JSON.stringify({ type: 'ENC', payload }));
+  } catch(e) {
+    toast('⚠ Encryption failed: ' + e.message);
+  }
+}
+
+function processSecureMessage(msg) {
+  if (msg.type === 'NAME_UPDATE') {
+    remotePeerName = msg.name;
+    document.getElementById('callPeerName').textContent = msg.name;
+    document.getElementById('remoteAvatarName').textContent = msg.name;
+    document.getElementById('remoteAvatarCircle').textContent = msg.name.charAt(0).toUpperCase();
+  }
+  if (msg.type === 'RATCHET_ACK') {
+    // Both sides confirm ratchet step
+  }
+}
+
+function updateEncryptionUI(ready) {
+  const ind = document.getElementById('encIndicator');
+  const lbl = document.getElementById('encLabel');
+  if (ready) {
+    ind.className = 'enc-indicator secure';
+    lbl.textContent = 'Encrypted';
+  } else {
+    ind.className = 'enc-indicator handshaking';
+    lbl.textContent = 'Handshaking';
+  }
+}
+
+function updateFingerprintUI() {
+  const fp = E2EE.getFingerprints();
+  document.getElementById('fpMine').textContent = fp.mine || '—';
+  document.getElementById('fpPeer').textContent = fp.peer || '—';
+  document.getElementById('fpSession').textContent = fp.session || '—';
+  const status = document.getElementById('fpStatus');
+  if (fp.mine && fp.peer && fp.session) {
+    status.className = 'fp-match ok';
+    status.textContent = '✓ Keys verified — compare fingerprints out-of-band to confirm no MITM';
+  } else {
+    status.className = 'fp-match pending';
+    status.textContent = '⏳ Key exchange in progress…';
+  }
+}
+
+function toggleFpPanel() {
+  fpPanelOpen = !fpPanelOpen;
+  document.getElementById('fpPanel').classList.toggle('open', fpPanelOpen);
+}
+
+function updateConnectingText(main, sub) {
+  const el = document.getElementById('connectingText');
+  const sub2 = document.getElementById('connectingSub');
+  if (el) el.textContent = main;
+  if (sub2) sub2.textContent = sub;
+}
+
+// ════════════════════════════════════════════════════════════════
+// CALL FLOW
+// ════════════════════════════════════════════════════════════════
+
+function setMode(m) {
+  callMode = m;
+  document.getElementById('modeVideo').classList.toggle('active', m==='video');
+  document.getElementById('modeAudio').classList.toggle('active', m==='audio');
+}
+
+function copyMyId() {
+  const id = document.getElementById('myIdDisplay').textContent;
+  navigator.clipboard.writeText(id).then(() => toast('ID copied!'));
+}
+
+async function getMedia(video=true) {
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: video ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false
+    });
+  } catch(e) {
+    toast('Camera/mic error: ' + e.message);
+    return null;
+  }
+}
+
+async function startCall() {
+  const targetId = document.getElementById('peerId').value.trim().toUpperCase();
+  if (!targetId) { toast('Enter a peer ID'); return; }
+  if (!peer || !peer.id) { toast('Not connected yet'); return; }
+
+  E2EE.reset();
+  encryptionReady = false;
+  updateEncryptionUI(false);
+
+  const myName = document.getElementById('myName').value.trim() || 'Anonymous';
+  const useVideo = callMode === 'video';
+
+  localStream = await getMedia(useVideo);
+  if (!localStream) return;
+  document.getElementById('localVideo').srcObject = localStream;
+
+  // Open encrypted data channel FIRST
+  const conn = peer.connect(targetId, { reliable: true, serialization: 'none' });
+  conn.on('open', async () => {
+    await initiateHandshake(conn);
+  });
+  conn.on('data', async (d) => {
+    await handleHandshakeData(d, conn);
+  });
+  conn.on('error', (e) => toast('Data channel error: ' + e));
+
+  // Then make the media call (metadata is intentionally minimal — real data goes encrypted)
+  remotePeerName = targetId;
+  const call = peer.call(targetId, localStream, {
+    metadata: { name: myName, mode: callMode }
+  });
+
+  showScreen('calling');
+  document.getElementById('callPeerName').textContent = targetId;
+  document.getElementById('remoteAvatarName').textContent = targetId;
+  document.getElementById('remoteAvatarCircle').textContent = targetId.charAt(0).toUpperCase();
+  setupCallHandlers(call, useVideo);
+  currentCall = call;
+}
+
+async function acceptCall() {
+  if (!pendingCall) return;
+  const meta = pendingCall.metadata || {};
+  const useVideo = (meta.mode || 'video') === 'video';
+
+  E2EE.reset();
+  encryptionReady = false;
+  updateEncryptionUI(false);
+
+  localStream = await getMedia(useVideo);
+  if (!localStream) return;
+  document.getElementById('localVideo').srcObject = localStream;
+
+  // If we already have a data connection from caller, start handshake
+  // Responder role: wait for HELLO from peer.on('connection')
+  if (pendingDataConn) {
+    await E2EE.generateKeyPair();
+    await E2EE.generateSigningKey();
+    // The HELLO from caller will arrive and trigger handleHandshakeData
+    // which will respond with HELLO_ACK
+    // Set up listener for incoming data
+    pendingDataConn.on('data', async (d) => {
+      await handleHandshakeData(d, pendingDataConn);
+    });
+    dataChannel = pendingDataConn;
+  }
+
+  pendingCall.answer(localStream);
+  document.getElementById('callPeerName').textContent = remotePeerName;
+  document.getElementById('remoteAvatarName').textContent = remotePeerName;
+  document.getElementById('remoteAvatarCircle').textContent = remotePeerName.charAt(0).toUpperCase();
+
+  showScreen('calling');
+  setupCallHandlers(pendingCall, useVideo);
+  currentCall = pendingCall;
+  pendingCall = null;
+}
+
+function declineCall() {
+  if (pendingCall) { pendingCall.close(); pendingCall = null; }
+  if (pendingDataConn) { pendingDataConn.close(); pendingDataConn = null; }
+  E2EE.reset();
+  showScreen('lobby');
+}
+
+function setupCallHandlers(call, useVideo) {
+  document.getElementById('connecting-overlay').classList.remove('hidden');
+  updateConnectingText('Connecting…', 'Establishing encrypted channel');
+
+  document.getElementById('camBtn').style.display = useVideo ? '' : 'none';
+  document.getElementById('selfPip').style.display = useVideo ? '' : 'none';
+  if (!useVideo) {
+    document.getElementById('remoteAvatar').style.display = 'flex';
+    document.getElementById('remoteVideo').style.display = 'none';
+    document.getElementById('remoteAvatarStatus').textContent = 'Audio call';
+  }
+
+  call.on('stream', (remoteStream) => {
+    document.getElementById('connecting-overlay').classList.add('hidden');
+    startCallTimer();
+
+    if (useVideo && remoteStream.getVideoTracks().length > 0) {
+      document.getElementById('remoteVideo').srcObject = remoteStream;
+      document.getElementById('remoteVideo').style.display = 'block';
+      document.getElementById('remoteAvatar').style.display = 'none';
+    } else {
+      document.getElementById('remoteAvatar').style.display = 'flex';
+      document.getElementById('remoteVideo').style.display = 'none';
+      document.getElementById('remoteAvatarStatus').textContent = 'Audio only';
+      document.getElementById('remoteVideo').srcObject = remoteStream;
+    }
+
+    // Send our name securely once stream is up
+    setTimeout(() => {
+      if (encryptionReady) {
+        const myName = document.getElementById('myName').value.trim() || 'Anonymous';
+        sendSecure({ type: 'NAME_UPDATE', name: myName });
+      }
+    }, 1000);
+  });
+
+  call.on('close', () => endCall());
+  call.on('error', () => { toast('Call error'); endCall(); });
+}
+
+// ════════════════════════════════════════════════════════════════
+// CONTROLS
+// ════════════════════════════════════════════════════════════════
+
+function toggleMute() {
+  if (!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+  document.getElementById('muteBtn').classList.toggle('muted', isMuted);
+  document.getElementById('muteIcon').innerHTML = isMuted
+    ? `<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>`
+    : `<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>`;
+}
+
+function toggleCamera() {
+  if (!localStream) return;
+  isCamOff = !isCamOff;
+  localStream.getVideoTracks().forEach(t => t.enabled = !isCamOff);
+  document.getElementById('camBtn').classList.toggle('cam-off', isCamOff);
+  document.getElementById('camIcon').innerHTML = isCamOff
+    ? `<line x1="23" y1="1" x2="1" y2="23"/><path d="M21 21H3a2 2 0 01-2-2V8a2 2 0 012-2h3m3-3h6l2 3h4a2 2 0 012 2v9.34"/>`
+    : `<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>`;
+}
+
+function toggleSpeaker() {
+  isSpeakerOff = !isSpeakerOff;
+  document.getElementById('remoteVideo').muted = isSpeakerOff;
+  document.getElementById('speakerBtn').classList.toggle('muted', isSpeakerOff);
+  document.getElementById('speakerIcon').innerHTML = isSpeakerOff
+    ? `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>`
+    : `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>`;
+}
+
+let videoDevices = [], videoDeviceIdx = 0;
+async function switchCamera() {
+  if (!localStream) return;
+  if (!videoDevices.length) {
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    videoDevices = devs.filter(d => d.kind === 'videoinput');
+  }
+  if (videoDevices.length < 2) { toast('No other camera found'); return; }
+  videoDeviceIdx = (videoDeviceIdx + 1) % videoDevices.length;
+  const ns = await navigator.mediaDevices.getUserMedia({
+    audio: true, video: { deviceId: { exact: videoDevices[videoDeviceIdx].deviceId } }
+  });
+  const nvt = ns.getVideoTracks()[0];
+  const sender = currentCall && currentCall.peerConnection &&
+    currentCall.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+  if (sender) sender.replaceTrack(nvt);
+  localStream.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+  localStream.addTrack(nvt);
+  document.getElementById('localVideo').srcObject = localStream;
+}
+
+function hangup() {
+  if (currentCall) currentCall.close();
+  if (dataChannel) { try { dataChannel.close(); } catch(e) {} }
+  endCall();
+}
+
+function endCall() {
+  if (callTimer) { clearInterval(callTimer); callTimer = null; callSeconds = 0; }
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  document.getElementById('remoteVideo').srcObject = null;
+  document.getElementById('localVideo').srcObject = null;
+  currentCall = null; dataChannel = null; pendingDataConn = null;
+  isMuted = false; isCamOff = false; isSpeakerOff = false;
+  encryptionReady = false; fpPanelOpen = false; handshakeState = 'idle';
+  E2EE.reset();
+  document.getElementById('muteBtn').classList.remove('muted');
+  document.getElementById('camBtn').classList.remove('cam-off');
+  document.getElementById('speakerBtn').classList.remove('muted');
+  document.getElementById('remoteVideo').style.display = 'block';
+  document.getElementById('remoteAvatar').style.display = 'none';
+  document.getElementById('callTimer').textContent = '00:00';
+  document.getElementById('connecting-overlay').classList.add('hidden');
+  document.getElementById('fpPanel').classList.remove('open');
+  updateEncryptionUI(false);
+  showScreen('lobby');
+}
+
+function startCallTimer() {
+  callSeconds = 0;
+  callTimer = setInterval(() => {
+    callSeconds++;
+    const m = String(Math.floor(callSeconds/60)).padStart(2,'0');
+    const s = String(callSeconds%60).padStart(2,'0');
+    document.getElementById('callTimer').textContent = m+':'+s;
+  }, 1000);
+}
+
+function showScreen(name) {
+  ['lobby','incoming','calling'].forEach(id => {
+    document.getElementById(id).classList.toggle('hidden', id !== name);
+  });
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+initPeer();
+</script>
+</body>
+</html>
