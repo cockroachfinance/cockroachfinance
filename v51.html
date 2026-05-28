@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cockroach Finance — Stable Money. No Politics. Just the Swarm.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold:#c9a84c;
+  --gold-light:#e8c96a;
+  --gold-dim:rgba(201,168,76,0.18);
+  --ink:#07070d;
+  --card:#0f0f18;
+  --surface:#13131e;
+  --text:#f0ede6;
+  --muted:#7a7888;
+  --border:rgba(201,168,76,0.2);
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--sans);background:var(--ink);color:var(--text);overflow-x:hidden}
+
+/* ---- LOADER ---- */
+#loader{position:fixed;inset:0;background:var(--ink);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;transition:opacity .8s,visibility .8s}
+#loader.gone{opacity:0;visibility:hidden;pointer-events:none}
+.loader-mark{font-family:var(--serif);font-size:3rem;color:var(--gold);animation:pulse 1.4s ease-in-out infinite}
+.loader-bar{width:120px;height:1px;background:rgba(201,168,76,.2);overflow:hidden}
+.loader-fill{height:100%;background:var(--gold);animation:fill 1.2s ease-in-out forwards}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes fill{from{width:0}to{width:100%}}
+
+/* ---- NAV ---- */
+nav{position:fixed;top:0;left:0;width:100%;z-index:500;padding:22px 5%;display:flex;justify-content:space-between;align-items:center;mix-blend-mode:normal}
+nav::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(7,7,13,.8),transparent);pointer-events:none;z-index:-1}
+.nav-logo{font-family:var(--serif);font-size:1.25rem;color:var(--gold);letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+.nav-logo img{height:34px;filter:drop-shadow(0 0 8px rgba(201,168,76,.5))}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{color:rgba(240,237,230,.55);font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;transition:color .25s}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{border:1px solid var(--gold);color:var(--gold);background:transparent;padding:9px 22px;border-radius:2px;font-family:var(--sans);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:.25s}
+.nav-cta:hover{background:var(--gold);color:var(--ink)}
+
+/* ---- HERO ---- */
+#hero{position:relative;width:100%;height:100vh;min-height:600px;display:flex;align-items:flex-end;overflow:hidden}
+.hero-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:brightness(.5) saturate(1.1)}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to top, rgba(7,7,13,1) 0%, rgba(7,7,13,.55) 45%, rgba(7,7,13,.15) 100%)}
+.hero-overlay::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4;pointer-events:none}
+.hero-content{position:relative;z-index:2;padding:0 6% 7vh;max-width:900px}
+.hero-eyebrow{display:inline-block;font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(201,168,76,.35);padding-bottom:6px;margin-bottom:24px;opacity:0;animation:fadeUp .8s .4s forwards}
+.hero-title{font-family:var(--serif);font-size:clamp(2.8rem,6.5vw,5.5rem);line-height:1.05;font-weight:900;color:var(--text);margin-bottom:20px;opacity:0;animation:fadeUp .9s .55s forwards}
+.hero-title em{font-style:italic;color:var(--gold-light)}
+.hero-sub{font-size:clamp(.95rem,1.6vw,1.15rem);color:rgba(240,237,230,.6);max-width:540px;line-height:1.7;margin-bottom:36px;font-weight:300;opacity:0;animation:fadeUp .9s .7s forwards}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;opacity:0;animation:fadeUp .9s .85s forwards}
+.btn-primary{background:var(--gold);color:var(--ink);border:none;padding:14px 32px;font-family:var(--sans);font-size:.85rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:.25s;border-radius:2px}
+.btn-primary:hover{background:var(--gold-light);transform:translateY(-2px)}
+.btn-ghost{background:transparent;border:1px solid rgba(240,237,230,.35);color:rgba(240,237,230,.7);padding:14px 32px;font-family:var(--sans);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:.25s;border-radius:2px}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.scroll-hint{position:absolute;bottom:32px;right:6%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;animation:fadeIn 1s 1.2s forwards}
+.scroll-hint span{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);writing-mode:vertical-lr}
+.scroll-line{width:1px;height:50px;background:linear-gradient(to bottom,var(--gold),transparent);animation:lineDown 1.6s 1.4s ease-in-out infinite}
+@keyframes lineDown{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* ---- TRUST TICKER ---- */
+.ticker-wrap{background:var(--gold);padding:10px 0;overflow:hidden;white-space:nowrap}
+.ticker-track{display:inline-flex;gap:0;animation:ticker 22s linear infinite}
+.ticker-item{font-family:var(--serif);font-size:.82rem;font-weight:700;color:var(--ink);padding:0 40px;letter-spacing:.06em}
+.ticker-item::after{content:'◆';margin-left:40px;font-size:.5rem;vertical-align:middle;opacity:.6}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ---- STATS ---- */
+.stats-section{background:var(--card);padding:80px 6%;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.stat-cell{padding:50px 40px;position:relative;text-align:center}
+.stat-cell:not(:last-child)::after{content:'';position:absolute;right:0;top:20%;height:60%;width:1px;background:var(--border)}
+.stat-num{font-family:var(--serif);font-size:clamp(2.4rem,4vw,3.5rem);font-weight:900;color:var(--gold);display:block;margin-bottom:8px}
+.stat-label{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.section{padding:110px 6%;max-width:1400px;margin:0 auto}
+.section-intro{max-width:680px;margin-bottom:72px}
+.overline{font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:block}
+.display{font-family:var(--serif);font-size:clamp(2rem,4vw,3.2rem);line-height:1.15;color:var(--text)}
+.display em{font-style:italic;color:rgba(240,237,230,.5)}
+.body-text{color:var(--muted);font-weight:300;line-height:1.75;margin-top:20px;font-size:.95rem}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.step{background:var(--card);padding:48px 40px;position:relative;overflow:hidden;transition:background .3s}
+.step:hover{background:var(--surface)}
+.step-num{font-family:var(--serif);font-size:5rem;font-weight:900;color:var(--gold-dim);position:absolute;top:16px;right:24px;line-height:1;pointer-events:none}
+.step-icon{font-size:1.8rem;margin-bottom:24px}
+.step-title{font-family:var(--serif);font-size:1.5rem;margin-bottom:16px;color:var(--text)}
+.step-body{font-size:.88rem;color:var(--muted);line-height:1.7}
+.step-list{list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.step-list li{font-size:.84rem;color:var(--muted);padding-left:16px;position:relative;line-height:1.5}
+.step-list li::before{content:'—';position:absolute;left:0;color:var(--gold);font-size:.7rem}
+.ledger-block{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:56px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:56px}
+.ledger-text h3{font-family:var(--serif);font-size:2rem;margin-bottom:20px}
+.rules-stack{display:flex;flex-direction:column;gap:20px}
+.rule-row{display:flex;align-items:flex-start;gap:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.rule-row:last-child{border-bottom:none;padding-bottom:0}
+.rule-n{font-family:var(--serif);font-size:1.6rem;color:var(--gold);font-weight:700;min-width:28px}
+.rule-text strong{display:block;font-size:.9rem;font-weight:500;margin-bottom:4px}
+.rule-text span{font-size:.82rem;color:var(--muted)}
+.ledger-visual{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:32px;font-family:monospace;font-size:.78rem;color:var(--gold)}
+.ledger-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(201,168,76,.08)}
+.ledger-row:last-child{border-bottom:none}
+.ledger-amount{color:var(--gold-light)}
+.ledger-date{color:var(--muted)}
+.ledger-btn{display:inline-flex;align-items:center;gap:10px;margin-top:28px;background:var(--gold);color:var(--ink);padding:12px 28px;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;cursor:pointer;border:none;border-radius:2px;transition:.25s;text-decoration:none}
+.ledger-btn:hover{background:var(--gold-light)}
+.faq-list{max-width:720px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{width:100%;background:none;border:none;color:var(--text);font-family:var(--sans);font-size:1rem;font-weight:400;padding:24px 0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;transition:color .2s;gap:20px}
+.faq-q:hover{color:var(--gold)}
+.faq-icon{color:var(--gold);font-size:1.2rem;flex-shrink:0;transition:transform .3s}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s}
+.faq-item.open .faq-a{max-height:200px;padding-bottom:24px}
+.faq-a p{color:var(--muted);font-size:.9rem;line-height:1.7;font-weight:300}
+.manifesto{background:var(--surface);border-top:1px solid var(--border);padding:100px 6%;text-align:center}
+.manifesto blockquote{font-family:var(--serif);font-size:clamp(1.4rem,3vw,2.2rem);line-height:1.5;color:var(--text);max-width:780px;margin:0 auto;font-style:italic}
+.manifesto blockquote::before{content:'"';display:block;font-size:4rem;color:var(--gold);line-height:.8;margin-bottom:16px;font-style:normal}
+footer{background:var(--ink);border-top:1px solid var(--border);padding:60px 6% 40px}
+.footer-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;flex-wrap:wrap;margin-bottom:40px}
+.footer-brand .brand-name{font-family:var(--serif);font-size:1.4rem;color:var(--gold);margin-bottom:10px}
+.footer-brand p{font-size:.82rem;color:var(--muted);max-width:240px;line-height:1.6}
+.footer-nav h5{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.footer-nav a{display:block;color:rgba(240,237,230,.5);font-size:.85rem;text-decoration:none;margin-bottom:10px;transition:color .2s}
+.footer-nav a:hover{color:var(--gold)}
+.footer-bottom{border-top:1px solid var(--border);padding-top:28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.footer-bottom p{font-size:.75rem;color:var(--muted)}
+
+/* ---- MODAL & QUIZ STYLES ---- */
+.modal-overlay{position:fixed;inset:0;background:rgba(7,7,13,.96);backdrop-filter:blur(12px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:.3s}
+.modal-overlay.active{opacity:1;visibility:visible}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px 28px;width:90%;max-width:500px;max-height:85vh;overflow-y:auto;position:relative;transform:translateY(20px);transition:transform .35s;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+.modal-overlay.active .modal-box{transform:translateY(0)}
+.modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:var(--muted);font-size:1.8rem;cursor:pointer;transition:color .2s;z-index:10;line-height:1}
+.modal-close:hover{color:var(--gold)}
+.modal-head h2{font-family:var(--serif);font-size:1.6rem;color:var(--gold);margin-bottom:8px}
+.modal-head p{font-size:.8rem;color:var(--muted);margin-bottom:24px}
+
+/* Quiz step styles */
+.quiz-container{min-height:280px;display:flex;flex-direction:column;gap:28px}
+.quiz-question{font-family:var(--serif);font-size:1.5rem;line-height:1.3;color:var(--text);margin-bottom:8px}
+.quiz-progress{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.progress-dot{width:32px;height:4px;background:var(--border);border-radius:2px;transition:background .2s}
+.progress-dot.active{background:var(--gold)}
+.progress-dot.done{background:var(--gold-light)}
+.quiz-buttons{display:flex;flex-direction:column;gap:14px;margin-top:20px}
+.quiz-yes-btn{background:var(--gold);color:var(--ink);border:none;padding:14px;font-size:1rem;font-weight:600;border-radius:40px;cursor:pointer;transition:.2s;width:100%}
+.quiz-yes-btn:hover{background:var(--gold-light);transform:scale(1.01)}
+.quiz-note{font-size:.7rem;color:var(--muted);text-align:center;margin-top:20px}
+.join-form-container{display:none;flex-direction:column;gap:20px}
+.join-form-container h3{font-family:var(--serif);font-size:1.4rem;color:var(--gold);margin-bottom:8px}
+.form-field{margin-bottom:18px}
+.form-field label{display:block;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.form-field input,.form-field select{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:.9rem}
+.form-field input:focus,.form-field select:focus{outline:none;border-color:var(--gold)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.submit-btn{width:100%;padding:14px;background:var(--gold);border:none;color:var(--ink);font-weight:700;font-size:.9rem;text-transform:uppercase;cursor:pointer;border-radius:40px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:hover{background:var(--gold-light)}
+.submit-btn.loading .btn-label{display:none}
+.spinner{width:18px;height:18px;border:2px solid var(--ink);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+.submit-btn.loading .spinner{display:block}
+.success-wrap{text-align:center;padding:20px 0;display:none}
+.success-wrap.active{display:block}
+.success-wrap h3{font-family:var(--serif);font-size:1.6rem;color:var(--gold);margin-bottom:10px}
+.error-message{color:#e05a5a;font-size:.75rem;margin-top:8px;text-align:center;display:none}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .75s cubic-bezier(.2,.8,.3,1),transform .75s cubic-bezier(.2,.8,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:900px){
+  .steps{grid-template-columns:1fr}
+  .stats-section{grid-template-columns:1fr 1fr}
+  .ledger-block{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .modal-box{padding:24px 20px}
+  .quiz-question{font-size:1.3rem}
+}
+@media(max-width:600px){
+  .stats-section{grid-template-columns:1fr}
+  nav{padding:16px 5%}
+  .ticker-item{padding:0 24px}
+}
+</style>
+</head>
+<body>
+<div id="loader"><div class="loader-mark">🪳</div><div class="loader-bar"><div class="loader-fill"></div></div></div>
+
+<!-- MAIN MODAL: handles both initial choice + quiz + join form -->
+<div class="modal-overlay" id="mainModal">
+  <div class="modal-box">
+    <button class="modal-close" id="modalCloseBtn">&times;</button>
+    <div id="modalDynamicContent">
+      <!-- Step 0: Join or Sign In choice -->
+      <div id="choiceScreen">
+        <div class="modal-head"><h2>Join the Swarm</h2><p>India's first fintech union for the unemployed</p></div>
+        <div style="display:flex;flex-direction:column;gap:16px;margin-top:20px">
+          <button id="choiceJoinBtn" class="submit-btn" style="background:var(--gold);color:var(--ink)">🪳 Join Now — 4 quick questions</button>
+          <button id="choiceSigninBtn" class="btn-ghost" style="width:100%;padding:12px">Sign In (Demo)</button>
+        </div>
+      </div>
+
+      <!-- Quiz Screen (4 questions) -->
+      <div id="quizScreen" style="display:none">
+        <div class="quiz-container">
+          <div class="quiz-progress" id="quizProgress"></div>
+          <div class="quiz-question" id="quizQuestionText"></div>
+          <div class="quiz-buttons"><button id="quizYesBtn" class="quiz-yes-btn">✓ Yes</button></div>
+          <div class="quiz-note">🪳 Cockroaches are resilient — answer honestly, it's your swarm.</div>
+        </div>
+      </div>
+
+      <!-- Join Form Screen -->
+      <div id="joinFormScreen" style="display:none">
+        <div class="join-form-container">
+          <h3>🪪 You qualify, cockroach.</h3>
+          <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Complete your application — free, no spam.</p>
+          <form id="finalJoinForm">
+            <div class="form-field"><label>Full Name</label><input type="text" id="fullName" placeholder="Your name" required></div>
+            <div class="form-field"><label>Phone</label><input type="tel" id="phone" placeholder="+91 98765 43210" required></div>
+            <div class="form-field"><label>Email</label><input type="email" id="email" placeholder="you@example.com" required></div>
+            <div class="form-row">
+              <div class="form-field"><label>State</label><select id="stateSelect"><option value="">Select</option></select></div>
+              <div class="form-field"><label>District</label><select id="districtSelect" disabled><option>Select district</option></select></div>
+            </div>
+            <div class="error-message" id="formError"></div>
+            <button type="submit" class="submit-btn" id="finalSubmit"><span class="spinner"></span><span class="btn-label">🪳 Join the Swarm</span></button>
+          </form>
+        </div>
+        <div class="success-wrap" id="successMsg"><h3>Welcome, Cockroach.</h3><p>You're in the swarm. We'll reach you within 48 hours.</p></div>
+      </div>
+
+      <!-- Sign In Demo Screen -->
+      <div id="signinScreen" style="display:none">
+        <div class="modal-head"><h2>Sign In</h2><p>Demo mode — welcome back</p></div>
+        <form id="demoSigninForm">
+          <div class="form-field"><label>Email or Phone</label><input type="text" id="demoCred" placeholder="Registered credential" required></div>
+          <div class="form-field"><label>Password</label><input type="password" id="demoPass" placeholder="••••••" required></div>
+          <button type="submit" class="submit-btn">Sign In</button>
+          <p style="text-align:center;margin-top:16px;font-size:.7rem;color:var(--muted)">Demo — no validation, just vibe</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN PAGE CONTENT (condensed but full) -->
+<nav><div class="nav-logo"><img src="https://lh3.googleusercontent.com/d/1rKv8KolKFMZOlq8Wd0aWpdMvsSicdnyk" alt="Logo" onerror="this.style.display='none'"> Cockroach Finance</div><ul class="nav-links"><li><a href="#how-it-works">Process</a></li><li><a href="#transparency">Ledger</a></li><li><a href="#faq">FAQ</a></li></ul><button class="nav-cta" id="navJoinTrigger">Join Swarm</button></nav>
+<section id="hero"><img class="hero-image" src="https://lh3.googleusercontent.com/d/1rKv8KolKFMZOlq8Wd0aWpdMvsSicdnyk" alt="Cockroach Finance" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:linear-gradient(135deg,#0f0f18 0%,#1a1408 50%,#0a0a0f 100%)'"><div class="hero-overlay"></div><div class="hero-content"><div class="hero-eyebrow">India's First Fintech Union for the Unemployed</div><h1 class="hero-title">Cockroach Finance<br><em>for the Resilient.</em></h1><p class="hero-sub">Stable money, zero politics, radical transparency. The swarm takes care of its own.</p><div class="hero-actions"><button class="btn-primary" id="heroJoinTrigger">Apply — It's Free</button><a href="#transparency" class="btn-ghost">View Public Ledger</a></div></div><div class="scroll-hint"><span>Scroll</span><div class="scroll-line"></div></div></section>
+<div class="ticker-wrap"><div class="ticker-track"><span class="ticker-item">Zero investors</span><span class="ticker-item">Full transparency</span><span class="ticker-item">Backed by each other</span><span class="ticker-item">No politics. No masters.</span><span class="ticker-item">Stable Money</span><span class="ticker-item">Just the Swarm</span><span class="ticker-item">Zero investors</span><span class="ticker-item">Full transparency</span><span class="ticker-item">Backed by each other</span><span class="ticker-item">No politics. No masters.</span><span class="ticker-item">Stable Money</span><span class="ticker-item">Just the Swarm</span></div></div>
+<div class="section" id="how-it-works"><div class="section-intro reveal"><span class="overline">The Process</span><h2 class="display">Three steps to <em>financial survival.</em></h2><p class="body-text">Simple, transparent, community-driven.</p></div><div class="steps reveal"><div class="step"><div class="step-num">01</div><div class="step-icon">🪪</div><h3 class="step-title">You Qualify</h3><p class="step-body">Unemployed or gig worker? You belong here.</p></div><div class="step"><div class="step-num">02</div><div class="step-icon">🃏</div><h3 class="step-title">Get the Cockroach Card</h3><p class="step-body">Access collective pool & stable income.</p></div><div class="step"><div class="step-num">03</div><div class="step-icon">📡</div><h3 class="step-title">Refer & Earn</h3><p class="step-body">Grow the swarm, unlock benefits.</p></div></div><div style="display:flex;gap:16px;margin-top:48px;flex-wrap:wrap" class="reveal"><button class="btn-primary" id="midJoinTrigger">🪳 Join the Club</button><button class="btn-ghost" id="referBtn">📢 Refer Friends</button></div></div>
+<div class="stats-section"><div class="stat-cell reveal"><span class="stat-num" id="memberCount">12,847</span><div class="stat-label">Swarm Members</div></div><div class="stat-cell reveal"><span class="stat-num" id="assetCount">₹4.62 Cr</span><div class="stat-label">Total Assets</div></div><div class="stat-cell reveal"><span class="stat-num">∞</span><div class="stat-label">Resilience</div></div></div>
+<div class="section" id="transparency"><div class="section-intro reveal"><span class="overline">Open Books</span><h2 class="display">Every rupee. <em>Every minute. Public.</em></h2><p class="body-text">Radical transparency. No hidden fees.</p></div><div class="ledger-block reveal"><div class="ledger-text"><h3>Our Three Laws of Money</h3><div class="rules-stack"><div class="rule-row"><div class="rule-n">1</div><div class="rule-text"><strong>Full Transparency</strong><span>Every transaction visible.</span></div></div><div class="rule-row"><div class="rule-n">2</div><div class="rule-text"><strong>Community-Driven</strong><span>Income strategies by the swarm.</span></div></div><div class="rule-row"><div class="rule-n">3</div><div class="rule-text"><strong>No Deletions</strong><span>Mistakes explained, never erased.</span></div></div></div><a href="#" class="ledger-btn" id="ledgerLink">📊 View Live Sheet</a></div><div class="ledger-visual"><div style="color:var(--muted);margin-bottom:16px">LIVE LEDGER — LAST 5 ENTRIES</div><div class="ledger-row"><span>Member join deposit</span><span class="ledger-amount">+₹500</span><span class="ledger-date" id="d1"></span></div><div class="ledger-row"><span>Pool payout</span><span class="ledger-amount" style="color:#6cb86c">+₹2,200</span><span class="ledger-date" id="d2"></span></div><div class="ledger-row"><span>Referral bonus</span><span class="ledger-amount">+₹150</span><span class="ledger-date" id="d3"></span></div><div class="ledger-row"><span>Investment return</span><span class="ledger-amount" style="color:#6cb86c">+₹8,400</span><span class="ledger-date" id="d4"></span></div><div class="ledger-row"><span>Member join deposit</span><span class="ledger-amount">+₹500</span><span class="ledger-date" id="d5"></span></div><div style="margin-top:20px;border-top:1px solid rgba(201,168,76,.1);padding-top:16px">Updated: <span id="lastUpdated"></span></div></div></div></div>
+<div class="section" id="faq"><div class="section-intro reveal"><span class="overline">Questions</span><h2 class="display">Frequently <em>asked.</em></h2></div><div class="faq-list reveal"><div class="faq-item"><button class="faq-q">Is this a political party? <span class="faq-icon">+</span></button><div class="faq-a"><p>No. Cockroach Finance is a fintech company with zero political affiliation.</p></div></div><div class="faq-item"><button class="faq-q">Where does the money come from? <span class="faq-icon">+</span></button><div class="faq-a"><p>Pool funded by contributions & investment returns, fully transparent.</p></div></div></div></div>
+<div class="manifesto reveal"><blockquote>They insulted us. We organized. Now we own the swarm.</blockquote><button class="btn-primary" style="margin-top:36px" id="manifestoJoinTrigger">Join Free — Apply Now</button></div>
+<footer><div class="footer-inner"><div class="footer-brand"><div class="brand-name">🪳 Cockroach Finance</div><p>Stable Money. No Politics. Just the Swarm.</p></div><div class="footer-nav"><h5>Navigate</h5><a href="#how-it-works">How It Works</a><a href="#transparency">Ledger</a><a href="#faq">FAQ</a></div></div><div class="footer-bottom"><p>© 2026 Cockroach Finance — Transparency guaranteed.</p></div></footer>
+
+<script>
+// ------------------------------
+// GOOGLE APPS SCRIPT URL (replace with yours)
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjest3Cq_KXafsslQV7DzLwVKuto5t32bcXSh8NweSWmR9Fj7JR9wkyrLqZ818_rpM6A/exec";
+// ------------------------------
+
+// ----- QUIZ LOGIC (4 questions) -----
+const quizQuestions = [
+  "Are you currently unemployed or working as a gig worker (Zomato, Swiggy, Uber, daily wage)?",
+  "Do you have a smartphone with an active UPI ID?",
+  "Do you have no pending criminal charges (self-declared)?",
+  "Do you have no drug-related convictions in the last 5 years?"
+];
+
+let currentQuizStep = 0;
+let quizAnswers = [false, false, false, false];
+
+// DOM elements
+const modal = document.getElementById('mainModal');
+const choiceScreen = document.getElementById('choiceScreen');
+const quizScreen = document.getElementById('quizScreen');
+const joinFormScreen = document.getElementById('joinFormScreen');
+const signinScreen = document.getElementById('signinScreen');
+const modalClose = document.getElementById('modalCloseBtn');
+const quizQuestionText = document.getElementById('quizQuestionText');
+const quizYesBtn = document.getElementById('quizYesBtn');
+const quizProgressDiv = document.getElementById('quizProgress');
+
+function resetModalToChoice() {
+  choiceScreen.style.display = 'block';
+  quizScreen.style.display = 'none';
+  joinFormScreen.style.display = 'none';
+  signinScreen.style.display = 'none';
+  currentQuizStep = 0;
+  quizAnswers = [false, false, false, false];
+  document.getElementById('successMsg').classList.remove('active');
+  const joinContainer = document.querySelector('#joinFormScreen .join-form-container');
+  if(joinContainer) joinContainer.style.display = 'flex';
+  document.getElementById('finalJoinForm').reset();
+}
+
+function renderQuiz() {
+  if(currentQuizStep >= quizQuestions.length) {
+    // all questions answered yes? move to join form
+    if(quizAnswers.every(v => v === true)) {
+      // show join form
+      choiceScreen.style.display = 'none';
+      quizScreen.style.display = 'none';
+      joinFormScreen.style.display = 'block';
+      signinScreen.style.display = 'none';
+      populateStatesIfNeeded();
+    } else {
+      // something was answered no? reset to choice with message (but treat as not eligible)
+      alert("🪳 Sorry, you don't meet the eligibility criteria right now. The swarm requires resilience.");
+      resetModalToChoice();
+      closeModal();
+    }
+    return;
+  }
+  quizQuestionText.innerText = quizQuestions[currentQuizStep];
+  // update progress dots
+  quizProgressDiv.innerHTML = '';
+  for(let i=0; i<quizQuestions.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    if(i === currentQuizStep) dot.classList.add('active');
+    else if(quizAnswers[i]) dot.classList.add('done');
+    quizProgressDiv.appendChild(dot);
+  }
+}
+
+function answerYes() {
+  if(currentQuizStep < quizQuestions.length) {
+    quizAnswers[currentQuizStep] = true;
+    currentQuizStep++;
+    renderQuiz();
+  }
+}
+
+function openModalWithQuiz() {
+  resetModalToChoice();
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  modal.classList.remove('active');
+  document.body.style.overflow = '';
+  resetModalToChoice();
+}
+
+// trigger open from any join button
+function openJoinFlow() {
+  resetModalToChoice();
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+document.getElementById('choiceJoinBtn').addEventListener('click', () => {
+  choiceScreen.style.display = 'none';
+  quizScreen.style.display = 'block';
+  currentQuizStep = 0;
+  quizAnswers = [false, false, false, false];
+  renderQuiz();
+});
+document.getElementById('choiceSigninBtn').addEventListener('click', () => {
+  choiceScreen.style.display = 'none';
+  signinScreen.style.display = 'block';
+});
+quizYesBtn.addEventListener('click', answerYes);
+
+// sign in demo
+document.getElementById('demoSigninForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  alert('Demo mode: Welcome back, cockroach!');
+  closeModal();
+});
+
+// back to choice if needed (close button handles reset)
+modalClose.addEventListener('click', closeModal);
+modal.addEventListener('click', e => { if(e.target === modal) closeModal(); });
+
+// attach all join triggers
+const joinTriggers = ['navJoinTrigger', 'heroJoinTrigger', 'midJoinTrigger', 'manifestoJoinTrigger'];
+joinTriggers.forEach(id => {
+  const btn = document.getElementById(id);
+  if(btn) btn.addEventListener('click', openJoinFlow);
+});
+
+// state & district data
+const stateData = {"Maharashtra":["Mumbai","Pune","Nagpur","Nashik"],"Delhi":["Central Delhi","South Delhi","North Delhi"],"Karnataka":["Bengaluru Urban","Mysuru","Mangaluru"],"Tamil Nadu":["Chennai","Coimbatore","Madurai"],"Kerala":["Thiruvananthapuram","Ernakulam","Kozhikode","Thrissur","Alappuzha"],"Gujarat":["Ahmedabad","Surat","Vadodara"],"Uttar Pradesh":["Lucknow","Kanpur","Varanasi"],"West Bengal":["Kolkata","Howrah","Durgapur"],"Rajasthan":["Jaipur","Jodhpur","Udaipur"],"Bihar":["Patna","Gaya","Muzaffarpur"],"Telangana":["Hyderabad","Warangal"],"Andhra Pradesh":["Visakhapatnam","Vijayawada"]};
+function populateStatesIfNeeded() {
+  const s = document.getElementById('stateSelect');
+  if(s && s.options.length <= 1) {
+    Object.keys(stateData).sort().forEach(st => { s.appendChild(new Option(st, st)); });
+  }
+}
+document.getElementById('stateSelect')?.addEventListener('change', function() {
+  const d = document.getElementById('districtSelect');
+  d.innerHTML = '<option>Select district</option>';
+  if(stateData[this.value]) {
+    stateData[this.value].forEach(x => d.appendChild(new Option(x, x)));
+    d.disabled = false;
+  } else d.disabled = true;
+});
+
+// final join form submission
+document.getElementById('finalJoinForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('finalSubmit');
+  const errorDiv = document.getElementById('formError');
+  errorDiv.style.display = 'none';
+  const fullName = document.getElementById('fullName').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const state = document.getElementById('stateSelect').value;
+  const district = document.getElementById('districtSelect').value;
+  if(!fullName || !phone || !email || !state || !district) {
+    errorDiv.textContent = 'Please fill all fields';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if(!/^[\+]?[0-9\s\-\(\)]{8,20}$/.test(phone)) { errorDiv.textContent = 'Valid phone number needed'; errorDiv.style.display='block'; return; }
+  if(!/^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/.test(email)) { errorDiv.textContent = 'Valid email needed'; errorDiv.style.display='block'; return; }
+  btn.classList.add('loading');
+  const payload = { fullName, phone, email, state, district };
+  try {
+    await fetch(APPS_SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    btn.classList.remove('loading');
+    document.querySelector('#joinFormScreen .join-form-container').style.display = 'none';
+    document.getElementById('successMsg').classList.add('active');
+    setTimeout(() => { closeModal(); }, 2200);
+  } catch(err) {
+    btn.classList.remove('loading');
+    errorDiv.textContent = 'Network error. Try again.';
+    errorDiv.style.display = 'block';
+  }
+});
+
+// misc: stats, ledger dates, FAQ, refer
+document.getElementById('referBtn')?.addEventListener('click', () => { navigator.clipboard?.writeText('Join Cockroach Finance — ROACH2026').then(()=>alert('Referral link copied!')); });
+document.getElementById('ledgerLink')?.addEventListener('click',(e)=>{e.preventDefault(); alert('Public ledger sheet accessible to members.');});
+let members=12847, assets=46219000;
+const memberEl=document.getElementById('memberCount'), assetEl=document.getElementById('assetCount');
+memberEl.textContent=members.toLocaleString('en-IN'); assetEl.textContent='₹'+(assets/10000000).toFixed(2)+' Cr';
+setInterval(()=>{ members+=Math.floor(Math.random()*3); assets+=Math.floor(Math.random()*15000); memberEl.textContent=members.toLocaleString('en-IN'); assetEl.textContent='₹'+(assets/10000000).toFixed(2)+' Cr'; }, 11000);
+const now=new Date(), fmt=d=>`${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+[1,2,3,4,5].forEach((n,i)=>{ const t=new Date(now-i*8*60000); document.getElementById('d'+n).textContent=fmt(t); });
+document.getElementById('lastUpdated').textContent=fmt(now);
+document.querySelectorAll('.faq-q').forEach(q=>{ q.addEventListener('click',()=>{ const item=q.parentElement; const wasOpen=item.classList.contains('open'); document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open')); if(!wasOpen) item.classList.add('open'); }); });
+const obs=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); } }); },{ threshold:.12 });
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+document.querySelectorAll('a[href^="#"]').forEach(a=>{ a.addEventListener('click',e=>{ const t=document.querySelector(a.getAttribute('href')); if(t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth'}); } }); });
+window.addEventListener('load',()=>{ setTimeout(()=>{ document.getElementById('loader').classList.add('gone'); }, 800); });
+</script>
+</body>
+</html>
