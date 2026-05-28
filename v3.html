@@ -198,7 +198,7 @@
             align-items: center;
             gap: 12px;
         }
-        .logo-img {
+        .logo-img-nav {
             height: 40px;
             width: auto;
             border-radius: 8px;
@@ -225,7 +225,112 @@
         }
         .join-nav-btn:hover { background: var(--accent-gold); color: var(--bg-primary);}
 
-        /* hero */
+        /* FULL SIZE LOGO HERO SECTION */
+        .logo-hero {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0a0a0f 0%, #0d0d14 50%, #0a0a0f 100%);
+        }
+
+        .logo-hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 30% 40%, rgba(212, 175, 55, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+                repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(212, 175, 55, 0.02) 2px, rgba(212, 175, 55, 0.02) 6px);
+            z-index: 0;
+        }
+
+        .logo-hero-content {
+            text-align: center;
+            z-index: 2;
+            padding: 40px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .main-logo {
+            width: 320px;
+            max-width: 70%;
+            height: auto;
+            filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.5));
+            animation: logoFloat 3s ease-in-out infinite, goldShine 2s ease-in-out infinite;
+            margin-bottom: 40px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .main-logo:hover {
+            transform: scale(1.02);
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes goldShine {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.4)); }
+            50% { filter: drop-shadow(0 0 50px rgba(212, 175, 55, 0.8)); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-hero-tag {
+            display: inline-block;
+            padding: 10px 32px;
+            border: 1.5px solid var(--accent-gold);
+            color: var(--accent-gold);
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            border-radius: 100px;
+            background: rgba(212, 175, 55, 0.08);
+            backdrop-filter: blur(5px);
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .logo-hero-tag::before {
+            content: "✨ ";
+            color: var(--accent-gold);
+        }
+
+        .logo-hero-tag::after {
+            content: " ✨";
+            color: var(--accent-gold);
+        }
+
+        /* Responsive for logo hero */
+        @media (max-width: 768px) {
+            .main-logo {
+                width: 220px;
+            }
+            .logo-hero-tag {
+                font-size: 0.7rem;
+                padding: 8px 20px;
+                letter-spacing: 2px;
+            }
+        }
+
+        /* rest of hero section */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -348,77 +453,11 @@
             font-weight: 600;
             cursor: pointer;
         }
-/* Hero1 Logo Section */
-.hero1 {
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 120px 48px 60px;
-    position: relative;
-    overflow: hidden;
-}
 
-.logo-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
-    z-index: -2;
-}
-
-.logo-content {
-    text-align: center;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.logo-img {
-    width: 180px;
-    height: auto;
-    max-width: 80%;
-    filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.4));
-    animation: glowPulse 2s ease-in-out infinite;
-    margin-bottom: 32px;
-}
-
-@keyframes glowPulse {
-    0%, 100% { filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3)); }
-    50% { filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.6)); }
-}
-
-.hero1 .hero-tag {
-    display: inline-block;
-    padding: 8px 24px;
-    border: 1px solid var(--accent-gold);
-    color: var(--accent-gold);
-    font-size: 0.75rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    border-radius: 100px;
-    background: rgba(212, 175, 55, 0.05);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .hero1 {
-        padding: 100px 24px 40px;
-        min-height: 50vh;
-    }
-    
-    .logo-img {
-        width: 120px;
-    }
-    
-    .hero1 .hero-tag {
-        font-size: 0.7rem;
-        padding: 6px 18px;
-    }
-}
         /* rest styles */
         .rules-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 32px; margin: 40px 0; }
+        .rule-card { text-align: center; padding: 20px; }
+        .rule-number { font-size: 3rem; color: var(--accent-gold); opacity: 0.4; font-weight: bold; }
         .motive-box { background: linear-gradient(135deg, rgba(212,175,55,0.1), transparent); border-left: 4px solid var(--accent-gold); padding: 32px; border-radius: 20px; margin: 40px 0;}
         .faq-container { max-width: 800px; margin: auto; }
         .faq-item { background: var(--bg-card); border-radius: 20px; margin-bottom: 16px; border: 1px solid var(--border);}
@@ -427,9 +466,28 @@
         .faq-item.active .faq-answer { max-height: 260px; padding: 0 28px 24px;}
         footer { background: var(--bg-secondary); padding: 60px 24px 40px; border-top: 1px solid var(--border);}
         .footer-content { max-width: 1100px; margin: auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 40px;}
+        
+        .btn-primary, .btn-secondary {
+            padding: 14px 32px;
+            border-radius: 60px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .btn-primary { background: var(--accent-gold); color: var(--bg-primary); border: none; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(212,175,55,0.3);}
+        .btn-secondary:hover { border-color: var(--accent-gold); color: var(--accent-gold);}
+        
+        .phase-dot { width: 8px; height: 8px; background: var(--accent-gold); border-radius: 50%; display: inline-block; margin-right: 8px; }
+        
         @media (max-width: 768px) {
             nav { padding: 14px 20px; }
-            .logo-img { height: 32px; }
+            .logo-img-nav { height: 32px; }
             .logo-text { font-size: 1.1rem; }
             .nav-links { display: none; }
             .join-nav-btn { display: inline-block; }
@@ -443,6 +501,10 @@
         .reveal { opacity: 0; transform: translateY(30px); transition: 0.7s cubic-bezier(0.2,0.9,0.4,1.1);}
         .reveal.active { opacity: 1; transform: translateY(0);}
         
+        @keyframes fadeInUp {
+            from{ opacity:0; transform:translateY(20px);}
+            to{ opacity:1; transform:translateY(0);}
+        }
     </style>
 </head>
 <body>
@@ -459,7 +521,6 @@
             <button class="auth-toggle active" id="joinTabBtn">Join</button>
             <button class="auth-toggle" id="signinTabBtn">Sign In</button>
         </div>
-        <!-- Join Form -->
         <div id="joinFormContainer" class="auth-form">
             <form id="joinForm">
                 <div class="form-group"><label>Full Name *</label><input type="text" id="joinName" required placeholder="Your name"></div>
@@ -472,7 +533,6 @@
                 <button type="submit" class="submit-btn" id="joinSubmitBtn"><span class="spinner"></span><span class="btn-text">🪳 Join the Swarm</span></button>
             </form>
         </div>
-        <!-- Sign In Form -->
         <div id="signinFormContainer" class="auth-form hidden-form">
             <form id="signinForm">
                 <div class="form-group"><label>Email / Phone</label><input type="text" id="signinId" placeholder="Registered email or phone" required></div>
@@ -485,7 +545,7 @@
     </div>
 </div>
 
-<!-- Skeleton Loader (short) -->
+<!-- Skeleton Loader -->
 <div class="skeleton-loader" id="skeletonLoader" style="position:fixed; inset:0; background:var(--bg-primary); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; transition:0.5s;">
     <div class="skeleton-logo" style="width:180px;height:30px;background:#1e1e28; margin-bottom:20px;"></div>
     <div class="skeleton-spinner" style="width:40px;height:40px;border:3px solid #d4af37; border-top-color:transparent; border-radius:50%; animation:spin 1s infinite;"></div>
@@ -493,7 +553,7 @@
 
 <nav>
     <div class="logo-area">
-       
+        <img class="logo-img-nav" src="https://lh3.googleusercontent.com/d/1rKv8KolKFMZOlq8Wd0aWpdMvsSicdnyk" alt="logo" onerror="this.src='https://placehold.co/40x40/d4af37/0a0a0f?text=🪳'">
         <span class="logo-text">Cockroach Finance</span>
     </div>
     <ul class="nav-links">
@@ -503,25 +563,26 @@
     </ul>
     <button class="join-nav-btn" id="navJoinBtn">Join Swarm</button>
 </nav>
-<!-- Hero1 Section -->
-<section class="hero1" id="hero">
-    <div class="logo-bg"></div>
-    <div class="logo-content">
-      
-        <img class="logo-img" src="https://lh3.googleusercontent.com/d/1rKv8KolKFMZOlq8Wd0aWpdMvsSicdnyk" alt="Cockroach Finance Logo" onerror="this.src='https://placehold.co/120x120/d4af37/0a0a0f?text=🪳'">
-       </div>  
+
+<!-- FULL SIZE LOGO HERO SECTION -->
+<section class="logo-hero">
+    <div class="logo-hero-bg"></div>
+    <div class="logo-hero-content">
+        <img class="main-logo" src="https://lh3.googleusercontent.com/d/1rKv8KolKFMZOlq8Wd0aWpdMvsSicdnyk" alt="Cockroach Finance Official Logo" onerror="this.src='https://placehold.co/300x300/d4af37/0a0a0f?text=🪳'">
+        <div class="logo-hero-tag">INDIAN ILLUMINATI CLUB</div>
     </div>
 </section>
-<!-- Hero Section -->
-<section class="hero" id="hero">
+
+<!-- Hero Section with Text -->
+<section class="hero" id="hero-text">
     <div class="hero-bg"></div>
     <div class="hero-content">
-        <div class="hero-tag reveal">A INDIAN ILLUMINATI CLUB</div>
+        <div class="hero-tag reveal">FINANCIAL REBELLION</div>
         <h1 class="reveal">Cockroach Finance for Unemployment</h1>
         <p class="hero-subtitle reveal">Stable Money. No Politics. Just the Swarm.</p>
         <p class="hero-description reveal">India's first fintech union for the unemployed, underemployed, and chronically online. Get the Cockroach Card.</p>
         <div class="hero-phases reveal" style="display:flex; justify-content:center; gap:32px; margin-bottom:32px;">
-            <div class="phase"><span class="phase-dot" style="background:var(--accent-gold); width:8px;height:8px; border-radius:50%; display:inline-block;"></span> Phase 1: Stable Income</div>
+            <div class="phase"><span class="phase-dot"></span> Phase 1: Stable Income</div>
             <div class="phase"><span class="phase-dot"></span> Phase 2: Stable Job</div>
         </div>
         <div class="hero-buttons reveal">
@@ -540,9 +601,7 @@
     </div>
 </div>
 
-
-
-<!-- How It Works Section (with eligibility one by one, two buttons) -->
+<!-- How It Works Section -->
 <section id="how-it-works">
     <div class="section-header">
         <div class="section-tag reveal">THE PROCESS</div>
@@ -553,14 +612,11 @@
         <div class="step-card reveal">
             <div class="step-number">01</div>
             <h3 class="step-title">You Qualify</h3>
-            <div class="eligibility-text" id="eligibilityText">
-                <!-- sentence by sentence animated on load? We'll just show bullet but each appears one by one via CSS? no, but we can make list items appear with fade -->
-            </div>
-            <ul class="checklist" id="dynamicChecklist">
-                <li style="animation: fadeInUp 0.3s forwards;">Unemployed OR gig worker (Zomato, Swiggy, Uber, Urban Company, or daily wage)</li>
-                <li style="animation: fadeInUp 0.5s forwards;">Has a smartphone and UPI ID</li>
-                <li style="animation: fadeInUp 0.7s forwards;">No pending criminal charges (self-declared)</li>
-                <li style="animation: fadeInUp 0.9s forwards;">No drug-related convictions in last 5 years</li>
+            <ul class="checklist">
+                <li>Unemployed OR gig worker (Zomato, Swiggy, Uber, Urban Company, or daily wage)</li>
+                <li>Has a smartphone and UPI ID</li>
+                <li>No pending criminal charges (self-declared)</li>
+                <li>No drug-related convictions in last 5 years</li>
             </ul>
         </div>
         <div class="step-card reveal">
@@ -580,6 +636,7 @@
     </div>
     <div class="golden-line"></div>
 </section>
+
 <!-- Stats Bar: Members + Assets -->
 <div class="stats-bar reveal">
     <div class="stats-container">
@@ -588,7 +645,8 @@
         <div class="stat-card"><h3>∞</h3><p>RESILIENCE</p></div>
     </div>
 </div>
-<!-- Transparency section (unchanged) -->
+
+<!-- Transparency section -->
 <section id="transparency">
     <div class="section-header">
         <div class="section-tag">OPEN BOOKS</div>
@@ -596,7 +654,7 @@
     </div>
     <div class="transparency-hero" style="background:var(--bg-secondary); border-radius:28px; padding:40px; text-align:center;">
         <h2>Every Rupee. Every Minute. Public.</h2>
-        <a href="#" class="ledger-btn" style="margin-top:24px; display:inline-flex;">📊 View Live Google Sheet</a>
+        <a href="#" class="btn btn-secondary" style="margin-top:24px; display:inline-flex;">📊 View Live Google Sheet</a>
     </div>
     <div class="rules-grid">
         <div class="rule-card"><div class="rule-number">1</div><h4>Full Transparency</h4><p>Every transaction visible to every member</p></div>
@@ -606,7 +664,7 @@
     <div class="motive-box"><p>"To make the life of each cockroach better. This ruling party or government has no influence or presence in their life."</p></div>
 </section>
 
-<!-- FAQ unchanged but golden accents -->
+<!-- FAQ -->
 <section id="faq">
     <div class="section-header"><div class="section-tag">QUESTIONS</div><h2>Frequently Asked</h2></div>
     <div class="faq-container">
@@ -627,9 +685,6 @@
 </footer>
 
 <script>
-    // ======================== STATES DATA (same as original) ===================
-    const stateDistricts = { "Andhra Pradesh":["Anantapur","Chittoor"], "Maharashtra":["Mumbai","Pune","Nagpur"], "Delhi":["Central","South","East"], "Karnataka":["Bengaluru","Mysore"], "Tamil Nadu":["Chennai","Coimbatore"], "Uttar Pradesh":["Lucknow","Kanpur"], "West Bengal":["Kolkata","Howrah"], "Gujarat":["Ahmedabad","Surat"], "Rajasthan":["Jaipur","Jodhpur"] };  // shortened for demo but functional
-    // full data merge? we'll keep original spirit but keep it light; but we can embed only sample because of token limit but functional. Use previously defined? But new file needs to show state dropdown. We'll add essential states.
     const fullStateDistricts = {
         "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"], "Delhi":["Central Delhi","South Delhi"], "Karnataka":["Bengaluru Urban","Mysore"], "Tamil Nadu":["Chennai","Coimbatore"], "Gujarat":["Ahmedabad","Surat"], "Uttar Pradesh":["Lucknow","Kanpur"], "West Bengal":["Kolkata"], "Rajasthan":["Jaipur"], "Bihar":["Patna"], "Telangana":["Hyderabad"]
     };
@@ -646,7 +701,6 @@
         } else distSelect.disabled = true;
     });
     
-    // modal handling unified
     const modal = document.getElementById('unifiedModal');
     const joinTab = document.getElementById('joinTabBtn');
     const signinTab = document.getElementById('signinTabBtn');
@@ -659,7 +713,6 @@
     joinTab.addEventListener('click',()=>{ joinTab.classList.add('active'); signinTab.classList.remove('active'); joinFormDiv.classList.remove('hidden-form'); signinFormDiv.classList.add('hidden-form');});
     signinTab.addEventListener('click',()=>{ signinTab.classList.add('active'); joinTab.classList.remove('active'); signinFormDiv.classList.remove('hidden-form'); joinFormDiv.classList.add('hidden-form');});
     
-    // Fake submit handlers
     document.getElementById('joinForm').addEventListener('submit', async(e) => {
         e.preventDefault(); const btn = document.getElementById('joinSubmitBtn'); btn.classList.add('loading'); btn.disabled=true;
         setTimeout(()=>{ btn.classList.remove('loading'); btn.disabled=false;
@@ -673,12 +726,10 @@
         closeUnifiedModal();
     });
     
-    // open modal from all join buttons
     const btns = ['navJoinBtn','heroJoinBtn','joinNowBtnMid'];
     btns.forEach(id => { let el = document.getElementById(id); if(el) el.addEventListener('click', openUnifiedModal); });
     document.getElementById('referBtnMid')?.addEventListener('click',()=>{ alert("Share referral link: copy 'Join the swarm, referral code: ROACH2026'"); });
     
-    // stats simulation (optional slight random growth)
     let member = 12847, assets = 46219000;
     setInterval(()=>{
         member += Math.floor(Math.random() * 3);
@@ -687,21 +738,12 @@
         document.getElementById('assetCount').innerText = '₹' + assets.toLocaleString();
     }, 12000);
     
-    // skeleton hide
     window.addEventListener('load',()=>{ setTimeout(()=>{ let skel = document.getElementById('skeletonLoader'); if(skel) skel.style.display='none'; },800); });
-    // reveal scroll
     const reveals = document.querySelectorAll('.reveal');
     function checkReveal(){ reveals.forEach(r=>{ if(r.getBoundingClientRect().top < window.innerHeight-100) r.classList.add('active'); }); }
     window.addEventListener('scroll', checkReveal); checkReveal();
-    // faq toggle
     document.querySelectorAll('.faq-question').forEach(q=>{ q.addEventListener('click',()=>{ let item = q.parentElement; item.classList.toggle('active'); }); });
-    // smooth nav
     document.querySelectorAll('a[href^="#"]').forEach(anchor=>{ anchor.addEventListener('click',function(e){ e.preventDefault(); let target=document.querySelector(this.getAttribute('href')); if(target) target.scrollIntoView({behavior:'smooth'}); }); });
-    // style reveal extra
-    document.querySelectorAll('.checklist li').forEach((li,idx)=>{ li.style.opacity='0'; li.style.animation=`fadeInUp 0.3s forwards ${idx*0.15}s`; });
-    const style = document.createElement('style');
-    style.textContent = `@keyframes fadeInUp{ from{ opacity:0; transform:translateY(15px); } to{ opacity:1; transform:translateY(0); } }`;
-    document.head.appendChild(style);
 </script>
 </body>
 </html>
